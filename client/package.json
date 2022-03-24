@@ -1,0 +1,68 @@
+{
+  "name": "apigate_client",
+  "version": "1.1.0",
+  "license": "MIT",
+  "main": "./src/index.js",
+  "scripts": {
+    "build": "export NODE_ENV='production' && export ENABLE_BROTLI=true && preact build --config config/preact.config.js",
+    "serve": "sirv build --cors --single --port 3000 --http2",
+    "watch": "preact watch --config config/preact.config.js",
+    "dev": "export PORT=3000 && export NODE_ENV='development' && preact watch --config config/preact.config.js",
+    "build-ssl": "cp config/template.html src/ && export NODE_ENV=production && export ENABLE_BROTLI=true && preact build --config config/preact.config_https.js --no-esm --sw --brotli true --template ./src/template.html",
+    "dev-ssl": "export PORT=3000 && export NODE_ENV='development' && preact watch --https --cert ./fullchain.pem --key ./privkey.pem --config config/preact.config_https.js",
+    "lint": "eslint src",
+    "test": "jest",
+    "bundle_watch": "webpack-bundle-analyzer --port 4200 build/stats.json"
+  },
+  "eslintConfig": {
+    "extends": "preact",
+    "ignorePatterns": [
+      "build/"
+    ]
+  },
+  "devDependencies": {
+    "@babel/preset-env": "^7.11.5",
+    "babel-loader": "^8.2.2",
+    "compression-webpack-plugin": "^6.1.1",
+    "css-loader": "^5.0.1",
+    "duplicate-package-checker-webpack-plugin": "^3.0.0",
+    "enzyme": "^3.10.0",
+    "enzyme-adapter-preact-pure": "^2.0.0",
+    "eslint": "^6.0.1",
+    "eslint-config-preact": "^1.1.0",
+    "html-webpack-plugin": "4.5.2",
+    "jest": "^24.9.0",
+    "jest-preset-preact": "^1.0.0",
+    "less": "^3.12.2",
+    "less-loader": "^7.0.2",
+    "node-sass": "^5.0.0",
+    "preact-cli": "3.3.5",
+    "preact-render-to-string": "5.1.20",
+    "sass-loader": "^10.1.0",
+    "sirv": "^1.0.7",
+    "sirv-cli": "^1.0.8",
+    "style-loader": "^2.0.0",
+    "terser-webpack-plugin": "4.2.3",
+    "ts-loader": "^8.0.4",
+    "typescript": "^4.0.3",
+    "webpack-bundle-analyzer": "^4.1.0",
+    "webpack-merge": "^5.3.0",
+    "xmlhttprequest": "^1.8.0",
+    "zlib": "^1.0.5"
+  },
+  "dependencies": {
+    "firebase": "^8.2.9",
+    "nanoid": "3.3.1",
+    "preact": "10.6.6",
+    "preact-router": "4.0.1",
+    "react-dropdown-tree-select": "2.7.1",
+    "universal-cookie": "^4.0.4"
+  },
+  "jest": {
+    "preset": "jest-preset-preact",
+    "setupFiles": [
+      "<rootDir>/tests/__mocks__/browserMocks.js",
+      "<rootDir>/tests/__mocks__/setupTests.js"
+    ]
+  }
+}
