@@ -3,7 +3,9 @@ import { useContext, useState, useEffect, useCallback } from 'preact/hooks';
 import { UserContext } from "./UserContext"
 import Cookies from 'universal-cookie';
 import { auth //, googleAuthProvider //, database
-       } from '../firebase';
+       } from './firebase'; //'./FireWorker';
+//firebase version 9 //https://firebase.google.cn/docs/auth/web/google-signin?hl=en
+import { onAuthStateChanged, signOut } from "firebase/auth";
 import { nanoid } from 'nanoid';
 import sessionInfo from './sessionInfo';
 import UserCookies from 'async!./UserCookies';
@@ -13,9 +15,10 @@ const { odbConfig } = require('./.ssologin.js');
 
 const UserHandler = () => {
   const cookies = new Cookies();
+  const sessionx = process.env.NODE_ENV === 'production'? 'session/' : 'sessioninfo/';
 //const history = createBrowserHistory();
-const { upars } = useContext(UserContext);
-const { user, setUser } = upars;
+  const { upars } = useContext(UserContext);
+  const { user, setUser } = upars;
 
   const [state, setState] = useState({
     ssostate: '',
@@ -32,8 +35,8 @@ const { user, setUser } = upars;
   const cookieOpts = {
     path: "/",
     //expires: new Date(2020, 11, 3, 15, 20, 0, 30),
-    maxAge: 1000 * 60 * 60 * 24,
-    sameSite: true,
+    maxAge: 31536000,
+    sameSite: "lax",
     secure: true
   };
 
@@ -72,7 +75,7 @@ const { user, setUser } = upars;
           if (sso) {
             if (sso.username && sso.username !== "") {
               cookies.set('uauth', 'odb', cookieOpts);
-              sessionInfo('sessioninfo/login', 'logined', ucstr, 'POST',
+              sessionInfo(sessionx + 'login', 'logined', ucstr, 'POST',
                           {action: 'logined', user: sso.username}, !alerted, setUser);
 
               setState((preState) => ({
@@ -80,14 +83,15 @@ const { user, setUser } = upars;
                 alerted: true,
                 ssostate: '',
               }));
+
               return(
                 setUser((preState) => ({
                   ...preState,
-                  //session: 'logined',
+                //logined: true,
                   name: sso.username,
-                  photoURL: 'https://ecodata.odb.ntu.edu.tw/pub/icon/favicon_tw.png',
+                  photoURL: '../../assets/icons/favicon_tw.png', //'https://ecodata.odb.ntu.edu.tw/pub/icon/favicon_tw.png',
                   auth: 'odb',
-                  //token: ucstrx
+                  token: ucstrx
                 }))
               );
             }
@@ -103,7 +107,7 @@ const { user, setUser } = upars;
   }, []);
 
   const SignOut = () => {
-    if (user.auth === 'gmail') { auth.signOut() };
+    if (user.auth === 'gmail') { signOut(auth) }; //.then(() => {...} //ver8.6.7: auth.signOut() };
     cookies.remove('ucode', { path: '/' });
     cookies.remove('uauth', { path: '/' });
     setUcode((preState) => ({
@@ -112,7 +116,6 @@ const { user, setUser } = upars;
     }));
     setUser((preState) => ({
       ...preState,
-      session: '',
       //logined: false,
       name: '',
       auth: '',
@@ -147,12 +150,12 @@ const { user, setUser } = upars;
       }); //catch (err) { reject(err) }
   };
 
-  const waitFireAuth = (ucstr) => {auth.onAuthStateChanged(
+  const waitFireAuth = (ucstr) => {onAuthStateChanged(auth, //ver8.6.7: auth.onAuthStateChanged(
           currUser => {
             if (currUser) {
               cookies.set('uauth', 'gmail', cookieOpts);
               //let chktoken =
-              sessionInfo('sessioninfo/login', 'logined', ucstr, 'POST',
+              sessionInfo(sessionx + 'login', 'logined', ucstr, 'POST',
                           {action: 'logined', user: currUser.displayName}, false, setUser);
               //if (chktoken) {
               return(
@@ -180,9 +183,9 @@ const { user, setUser } = upars;
           session: 'initCookieSet',
       }));
     } else if (user.saveAgree) {
-      if (user.session === 'initCookieSet') {
+      if (user.session === 'initCookieSet' && ucode.str !== '') {
         //let chktoken =
-        sessionInfo('sessioninfo/init', 'initSession', ucode.str, 'POST',
+        sessionInfo(sessionx + 'init', 'initSession', ucode.str, 'POST',
                     {action: 'initSession'}, false, setUser);
       } else if (user.session !== 'logined') {
         let uc = ucode.str;
@@ -197,10 +200,10 @@ const { user, setUser } = upars;
             waitFireAuth(uc);;
           }
 //        console.log("Now user state is ", user.session);
-/*        setUser((preState) => ({
+          setUser((preState) => ({
             ...preState,
-            session: 'init',
-          })); */
+            init: true,
+          }));
         }
       }
     }
@@ -210,9 +213,7 @@ const { user, setUser } = upars;
   return (
     <section class={style.flex}>
       { user.name === '' &&
-        <div>
         <SignIn ucode={ucode.str} rurl={odbConfig.base + odbConfig.login} />
-        </div>
       }
       { user.name !== '' && <div style="display:flex">
         <CurrUser /></div>

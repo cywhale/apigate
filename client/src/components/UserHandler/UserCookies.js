@@ -1,10 +1,9 @@
-//use hooks for https://jsfiddle.net/vittore/nyrmcmcy/2/
-/** @jsx h */
-import { render } from 'preact'; //Fragment
-import { useState, useEffect, useRef } from 'preact/hooks'; //useCallback
+import { render } from 'preact';
+import { useState, useEffect, useRef } from 'preact/hooks';
 import Cookies from 'universal-cookie';
 //import { nanoid } from 'nanoid';
-import "../../style/style_usercookies.css";
+import(/* webpackPreload: true */
+       "../../style/style_usercookies.scss");
 import style from "./style_cookiediv";
 
 const UserCookies = (props) => {
@@ -16,22 +15,17 @@ const UserCookies = (props) => {
   const cookieOpts = {
     path: "/",
     //expires: new Date(2020, 10, 20, 14, 20, 0, 30),
+    maxAge: 31536000,
+    sameSite: "lax",
     secure: true,
-    samSite: true,
+    httpOnly: false
   };
-  /*const ucodelen = 32;
-  const [ucode, setUcode] = useState({
-    str: '',
-    //expired:
-  }); */
+
   const cookieRef = useRef(null);
 
   const setCookie = (c) => {
-    //console.log('setcookies before:', cookies); //document.cookie);
-    let cookie = c.split('=');//document.cookie;
-    //document.cookie = cookies + ';' + c;
+    let cookie = c.split('=');
     cookies.set(cookie[0], cookie[1], cookieOpts);
-    //console.log('setcookies after:', cookies.get(cookie[0], { doNotParse: true }));
   };
 
   const CookiePopup = () => {
@@ -40,12 +34,8 @@ const UserCookies = (props) => {
     });
 
     const clickClose = (allow) => {
-      //console.log('click close');
       const d = document.getElementById('useCookies');
-      //if (!state.close) {
-      if (allow) {
-        setCookie('useragree=true'); // + ((allow)? 'true' : 'false'));
-      }
+      setCookie('useragree=' + ((allow)? 'true' : 'false'));
       render(<Nothing />, d, root);
       setShown(true);
       return(
@@ -57,11 +47,9 @@ const UserCookies = (props) => {
     };
 
     const clickDetails = () => {
-      //console.log('click details');
-      setPopup( { details: true }) //this.
+      setPopup( { details: true })
     };
 
-    //render(props, state) {
     const details = popup.details;
     return(
         <div class={details? 'details':''}><p>
@@ -74,12 +62,13 @@ const UserCookies = (props) => {
           </p>}</p>
         </div>
     );
+
   };
 
   const checkCookies = () => {
     let c = cookies.get('useragree', { doNotParse: true });
     console.log('Check Cookies initially: ', c)
-    //return (c.indexOf('cookiepolycyagree=true') > -1);
+    //return (c.indexOf('useragree=true') > -1);
     if (c !== null && c !== undefined) {
       userCallback((preState) => ({
            ...preState,
@@ -96,34 +85,8 @@ const UserCookies = (props) => {
       setRoot(render(<CookiePopup />, cookieRef.current)); //document.getElementById('useCookies')));
     }
   };
-/*
-  const fetchingUcode = (leng=32) => nanoid(leng);
-
-  const setWithUcode = useCallback(() => {
-    const checkUcode = () => {
-      let uget = false;
-      let uc = cookies.get('ucode', { doNotParse: true });
-      console.log('Check ucode availability: ', uc)
-      if (uc !== null && uc != undefined) {
-        uget = uc && uc !== '' && uc.length === ucodelen;
-      }
-      if (!uget) {
-        uc = fetchingUcode(ucodelen);
-        cookies.set('ucode', uc, cookieOpts);
-      }
-      setUcode((preState) => ({
-          ...preState,
-          str: uc
-      }));
-    };
-
-    checkUcode();
-    console.log(ucode.str);
-  }, [ucode]);
-*/
 
   useEffect(() => {
-    //if (root === null) {
     initCookies();
   }, []);
 
@@ -133,14 +96,7 @@ const UserCookies = (props) => {
   } else {
     showClass=`${style.cookiediv}`
   }
-  //console.log("showClass: " + showClass + " when isShown is: " + shown);
-/*
-    <Fragment>
-      <div>
-        <button onClick={() => setWithUcode()}>Sign In</button>
-      </div>
-    </Fragment>
-*/
+
   return(
       <div id='useCookies' class={showClass} isShown={shown} ref={cookieRef} />
   );

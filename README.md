@@ -19,6 +19,6 @@ nodemon server/server.js
 yarn install
 
 # build for production with minification
-yarn build-ssl
+yarn build
 
 ```

@@ -18,15 +18,18 @@
   border-radius: 20px;
   background: white;
 }
+/*
 #ssodiv {
   height: auto;
   overflow-y: auto;
   font-size: 0.6em;
   padding: 10px;
-}
-#loginclose {
+}*/
+.popup_close {
   border-radius: 20px;
   margin: 5px 10px;
+  padding:6px 6px;
+  font-size:0.9em;
 }
 
 @media screen and (max-width: 680px) {

@@ -23,6 +23,8 @@ export default async function sessionInfo(url, action, ucode, method='POST', bod
         }))
         if (!res.ok && sendAlert) {
           alert("Sorry. We have trouble when checking token authority internally.\r\nYou still can login and use preferred settings that have no privacy/authroized issues.\r\nPlease contact us if this situation continuously happens.");
+        } else {
+          console.log("is res ok? ", res)
         }
         return(res.ok);
       });

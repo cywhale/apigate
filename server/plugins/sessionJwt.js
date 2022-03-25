@@ -1,4 +1,3 @@
-//const boom = require('boom');
 //const { createSigner, createVerifier } = require('fast-jwt'); //createDecoder
 import { createSigner, createVerifier } from 'fast-jwt'
 import fp from 'fastify-plugin'
@@ -9,13 +8,12 @@ async function sessionJwt (fastify, opts) {
   fastify.decorate('setToken', setToken)
 
   function createToken (secret, payload) {
-    const signSync = createSigner({key: secret});
-    const token = signSync(payload);
-    return (token);
+    const signSync = createSigner({key: secret})
+    const token = signSync(payload)
+    return (token)
   }
 
   function verifyToken (req, res, secret, verify) {
-    //try {
       const verifySync = createVerifier({
             key: secret,
             complete: true,
@@ -34,12 +32,6 @@ async function sessionJwt (fastify, opts) {
       return (result.payload.verify === verify);
       //  res.code(200).send({'success': 'Token verified'});
       //  return next()
-      //}
-      //})
-    /*} catch (err) {
-      console.log(err);
-      res.code(401).send({'fail': 'Token not verified'});
-    }*/
   }
 
   async function setToken (req, res, secret, verify) {
@@ -63,11 +55,11 @@ async function sessionJwt (fastify, opts) {
 //    }
     try {
       await res
-      .header('Access-Control-Allow-Origin', 'https://eco.odb.ntu.edu.tw')
+      .header('Access-Control-Allow-Origin', 'https://ecodata.odb.ntu.edu.tw')
       .header('Content-Type', 'application/json; charset=utf-8')
       .header('Access-Control-Allow-Credentials',true)
       .setCookie('token', token, {
-        domain: 'eco.odb.ntu.edu.tw',
+        domain: 'ecodata.odb.ntu.edu.tw',
         path: '/',
         //expires: new Date(Date.now() + 999999),
         maxAge: 3 * 60 * 60 * 24,
@@ -78,7 +70,6 @@ async function sessionJwt (fastify, opts) {
       .code(200)
       .send({'success': 'Init token'})
     } catch (err) {
-      //throw boom.boomify(err)
       req.log.info("setToken response error: ", err);
     }
   }

@@ -1,7 +1,8 @@
 import { useContext, useState, useCallback } from "preact/hooks";
 import { UserContext } from "./UserContext"
-import { auth, googleAuthProvider } from '../firebase';
-import Popup from 'async!../Popup';
+import { auth, googleAuthProvider } from './firebase'; //'./FireWorker';
+import { signInWithPopup } from "firebase/auth"; //firebase version 9
+import LoginPopup from 'async!./LoginPopup';
 import sessionInfo from './sessionInfo';
 import style from './style_signin';
 
@@ -21,8 +22,10 @@ const SignIn = (props) => {
     //token: '',
   });
 */
+  const sessionx = process.env.NODE_ENV === 'production'? 'session/' : 'sessioninfo/';
+
   const checkAuth = async () => {
-    //console.log("ODB SSO iframe src change");
+    console.log("ODB SSO iframe src change", user.auth, sessionx, ucode);
     return (
       await setUser((preState) => ({
         ...preState,
@@ -58,31 +61,32 @@ const SignIn = (props) => {
   }, [ucode]);
 
   const renderFirePopup = useCallback((fireauth, fireprovider) => {
-    fireauth.signInWithPopup(fireprovider).then((result) => {
+    //ver8.6.7: fireauth.signInWithPopup(fireprovider).then((result) => {
+    signInWithPopup(fireauth, fireprovider).then((result) => {
       // This gives you a Google Access Token. You can use it to access the Google API.
       // var token = result.credential.accessToken; //We not use this token currently.
       // The signed-in user info. //var user = result.user;
-      // let chktoken =
-      sessionInfo('sessioninfo/login', 'logined', ucode, 'POST',
+      sessionInfo(sessionx + 'login', 'logined', ucode, 'POST',
                   {action: 'logined', user: result.user.displayName},
                   true, setUser);
-      //if (chktoken) {
-      return(
-        setUser((preState) => ({
-          ...preState,
-          //session: 'logined',
-          name: result.user.displayName,
-          photoURL: result.user.photoURL,
-          auth: 'gmail',
-        }))
-      );
+
+      setUser((preState) => ({
+        ...preState,
+        //logined: true,
+        name: result.user.displayName,
+        photoURL: result.user.photoURL,
+        auth: 'gmail',
+        token: ucode
+      }));
     }).catch((error) => { // Handle Errors here.
       //let errorCode = error.code;
       //let errorMessage = error.message;
       //The email of the user's account used. //let email = error.email;
       //The firebase.auth.AuthCredential type that was used. //let credential = error.credential;
-      console.log("Gmail login error: ", error.code, "; ", error.message, " with ", error.email, " and ", error.credential);
-      alert("Gmail login error: Sometimes just connection failed, try sign in more times please.");
+      if (user.auth === '' || user.auth !== 'odb') {
+        console.log("Gmail login error: ", error.code, "; ", error.message, " with ", error.email, " and ", error.credential);
+        alert("Gmail login error: Sometimes just connection failed, try sign in more times please.");
+      }
     })
   }, []);
 
@@ -92,7 +96,7 @@ const SignIn = (props) => {
              referrerpolicy="no-referrer"
                      class={style.signInImg}
                      src="../../assets/icons/favicon.png"
-                     width="128" />
+                     width="60" />
         { user.saveAgree &&
           <div style="display:inline-block;">
             <button class={style.button} onClick={renderRedirect}>ODB</button>
@@ -102,7 +106,7 @@ const SignIn = (props) => {
           </div>
         }
         { state.popup && state.redirect !== '' &&
-          <Popup
+          <LoginPopup
             srcurl={state.redirect}
             text='Click "Close Button" to hide popup'
             closePopup={closePopup}
