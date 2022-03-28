@@ -11,7 +11,8 @@ export default async function (fastify, opts) {
     node_env: process.env.NODE_ENV || 'development',
     port: process.env.PORT || 3000,
     devTestPort: 3003,
-    sessiondir: process.env.NODE_ENV === 'production'? '/session' : '/sessioninfo'
+    sessiondir: process.env.NODE_ENV === 'production'? '/session' : '/sessioninfo',
+    //allowSrc: ['https://nodeeco.firebaseapp.com','https://odbsso.oc.ntu.edu.tw']
   })
 
 /*fastify.register(Sensible)
@@ -22,8 +23,47 @@ export default async function (fastify, opts) {
     maxEventLoopUtilization: 0.98
   })
 */
-  fastify.register(Cors, {
-    origin: false
+//const allowSrc = ['https://nodeeco.firebaseapp.com','https://odbsso.oc.ntu.edu.tw']
+  fastify.register(Cors, { origin: false
+/*  origin: ['*'], //'https://ecodata.odb.ntu.edu.tw', 'https://localhost:3000', 'https://nodeeco.firebaseapp.com','https://odbsso.oc.ntu.edu.tw'],
+    methods: ['GET', 'POST', 'PUT', 'PATCH', 'DELETE'],
+    allowedHeaders: [
+      'Authorization',
+      'Content-Type',
+      'User-Agent',
+      // user device headers
+      'X-Device-Brand',
+      'X-Device-Model',
+      'X-Device-Platform',
+      'X-Device-OS',
+      'X-Device-Token',
+      // client info headers
+      'X-Client-AppVersion',
+      'X-Client-AppId',
+      'X-Client-Id',
+      // test others
+      'Origin', 'X-Requested-With', 'Accept',
+      'Cross-Origin-Resource-Policy', 'Cross-Origin-Opener-Policy',
+      'Access-Control-Allow-Origin', 'Access-Control-Allow-Headers',
+      'X-Content-Type-Options', 'X-Frame-Options', 'X-UA-Compatible'
+    ],
+    credentials: true,*/
+  /*function (instance) {
+    return (req, callback) => {
+      let corsOptions;
+      const origin = req.headers.origin
+      // do not include CORS headers for requests from localhost
+      //const hostname = new URL(origin).hostname
+      //if (hostname === "localhost"){
+      //  corsOptions = { origin: false }
+      //} else
+      if (allowSrc.indexOf(origin) !== -1) {
+        corsOptions = { origin: true }
+      } else {
+        corsOptions = { origin: false }
+      }
+      callback(null, corsOptions) // callback expects two parameters: error and options
+    }*/
   })
 
   fastify.register(Cookie, {})

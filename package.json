@@ -7,6 +7,7 @@
   "scripts": {
     "start": "export PORT=3000 && node server/server.js",
     "sessioninfo": "export PORT=3003 && export NODE_ENV=development && node server/server.js",
+    "server": "export PORT=3000 && export NODE_ENV=production && npx nodemon --exec npm run start",
     "test": "echo \"Error: no test specified\" && exit 1"
   },
   "keywords": [

@@ -69,7 +69,7 @@ const UserHandler = () => {
     let ucstrx = ucstr !== undefined? ucstr: ucode.str;
     //if (gencode && ucstrx === '') ucstrx = initUcode();
     const chkurl =  odbConfig.base + odbConfig.check + "?ucode=" + ucstrx;
-    await fetch(chkurl)
+    await fetch(chkurl, {mode: 'cors'})
        .then(res => res.json())
        .then(sso => {
           if (sso) {

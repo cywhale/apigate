@@ -28,21 +28,14 @@ export default async function (fastify, opts) {
       }
     }
   }
+  const allowSrc = ['https://nodeeco.firebaseapp.com','https://odbsso.oc.ntu.edu.tw']
 
   fastify.register(Helmet, {
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'", "https:"],
-        frameAncestors: [
-          'https://nodeeco.firebaseapp.com/',
-          'https://bio.odb.ntu.edu.tw',
-          'https://odbsso.oc.ntu.edu.tw/'
-        ],
-        frameSrc: [
-          'https://nodeeco.firebaseapp.com/',
-          'https://bio.odb.ntu.edu.tw',
-          'https://odbsso.oc.ntu.edu.tw/'
-        ],
+        frameAncestors: allowSrc,
+        frameSrc: allowSrc,
         scriptSrc: ["'self'", "https:", "'unsafe-eval'"],
         connectSrc: ["'self'", "https:"],
         imgSrc: ["'self'", "https:", "data:"],
@@ -77,6 +70,17 @@ export default async function (fastify, opts) {
         root: join(import.meta.url, '../..', 'client/build'), //path.join(__dirname, '..', 'client/build'),
         prefix: '/',
         prefixAvoidTrailingSlash: true,
+/*        setHeaders: function (res, path, stat) {
+            res.setHeader('Cross-Origin-Resource-Policy', 'cross-origin')
+            res.setHeader('Cross-Origin-Opener-Policy', 'same-origin-allow-popups')
+            res.setHeader('Access-Control-Allow-Origin', '*')
+            res.setHeader('Access-Control-Allow-Headers', 'Origin, X-Requested-With, Content-Type, Accept, Access-Control-Allow-Origin, Cache-Control')
+            res.setHeader('X-Content-Type-Options', 'nosniff')
+            res.setHeader('X-Frame-Options', 'ALLOW-FROM https://get.google.com https://nodeeco.firebaseapp.com https://odbsso.oc.ntu.edu.tw')
+            res.setHeader('X-UA-Compatible', 'ie=edge')
+            res.setHeader('X-XSS-Protection', '1; mode=block')
+            //res.setHeader('Cross-Origin-Embedder-Policy', 'credentialless')
+        },*/ // console.log(stat) } },
         list: true,
         cacheControl: true,
         maxAge: 31536000000 //in ms
