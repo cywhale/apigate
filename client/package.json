@@ -6,7 +6,7 @@
   "scripts": {
     "serve": "sirv build --cors --single --port 3000 --http2",
     "watch": "preact watch --config config/preact.config.js",
-    "build": "cp config/template.html src/ && export NODE_ENV=production && export ENABLE_BROTLI=true && preact build --config config/preact.config.js --no-esm --sw --brotli true --template ./src/template.html",
+    "build": "cp config/template.html src/ && NODE_OPTIONS=--openssl-legacy-provider && export NODE_ENV=production && export ENABLE_BROTLI=true && preact build --config config/preact.config.js --no-esm --sw --brotli true --template ./src/template.html",
     "dev": "preact watch --sw false",
     "lint": "eslint src",
     "test": "jest",
@@ -34,8 +34,7 @@
     "less": "^3.12.2",
     "less-loader": "^7.0.2",
     "node-sass": "^5.0.0",
-    "preact-cli": "3.3.5",
-    "preact-render-to-string": "5.1.20",
+    "preact-cli": "^3.3.5",
     "sass-loader": "^10.1.0",
     "sirv": "^1.0.7",
     "sirv-cli": "^1.0.8",
@@ -56,12 +55,9 @@
     "zlib": "^1.0.5"
   },
   "dependencies": {
-    "firebase": "^9.6.9",
-    "nanoid": "3.3.1",
-    "preact": "10.6.6",
-    "preact-router": "4.0.1",
-    "react-dropdown-tree-select": "2.7.1",
-    "universal-cookie": "^4.0.4"
+    "preact": "^10.6.6",
+    "preact-render-to-string": "5.1.20",
+    "preact-router": "4.0.1"
   },
   "jest": {
     "preset": "jest-preset-preact",

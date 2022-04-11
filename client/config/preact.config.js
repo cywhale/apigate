@@ -90,11 +90,13 @@ const other_config = (config, env) => {
     },
     resolve: {
       fallback: path.resolve(__dirname, '..', 'src'),
-      extensions: ['.js', '.json', '.jsx', ''],
+      extensions: ['.js', '.json', '.jsx', '.ts'],
       mainFields: ['module', 'main'],
       alias: {
         "react": "preact-compat",
-        "react-dom": "preact-compat"
+        "react-dom": "preact-compat",
+        //"preact": path.resolve(__dirname, 'node_modules', 'preact'),
+        //"preact/hooks": path.resolve(__dirname, 'node_modules', 'preact', 'hooks')
       }
     },
     module: {
@@ -356,8 +358,18 @@ const baseConfig = (config, env, helpers) => {
 
 //module exports = {
 export default (config, env, helpers) => {
-  return merge(
+  merge(
     baseConfig(config, env, helpers),
     other_config(config, env)
   );
+/*
+  config.resolve.alias = {
+    ...config.resolve.alias,
+    react: "preact/compat",
+    "react-dom": "preact/compat",
+    //preact: path.resolve(__dirname, 'node_modules', 'preact'),
+    //"preact/hooks": path.resolve(__dirname, 'node_modules', 'preact', 'hooks')
+  };
+*/
+  return config;
 };

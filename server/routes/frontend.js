@@ -65,7 +65,7 @@ export default async function (fastify, opts) {
   })
 
   if (fastify.conf.port !== fastify.conf.devTestPort) { // for testing
-    console.log("In prod mode with sessiondir ", fastify.conf.sessiondir)
+    console.log("In X mode with sessiondir ", process.env.NODE_ENV, fastify.conf.sessiondir)
     fastify.register(Static, {
         root: join(import.meta.url, '../..', 'client/build'), //path.join(__dirname, '..', 'client/build'),
         prefix: '/',

@@ -32,3 +32,5 @@
 **/distdll
 **/.ssologin.js
 **/src/template.html
+**/.yarn/
+**/.yarnrc

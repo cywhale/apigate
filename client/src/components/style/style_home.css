@@ -1,5 +1,35 @@
 .home {
-	padding: 56px 20px;
-	min-height: 100%;
-	width: 100%;
+  padding: 56px 20px;
+  min-height: 100%;
+  width: 100%;
+}
+.centerdiv {
+  max-height: 50%;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  flex-wrap: wrap;
+  flex-direction: column;
+}
+.griddiv {
+  display: flex;
+  flex-wrap: wrap;
+}
+.gridleft {
+  width: 15%;
+}
+.gridmid {
+  width: auto;
+  min-width:50%;
+}
+.gridthird {
+  width: calc(100%-15%-50%);
+  min-width: 22em;
+  background: #041a2e;
+  border: 1px solid lightgrey;
+  border-radius:8px;
+  color: #b7d2eb; 
+  display: flex;
+  justify-content: center;
+  align-items: center;
 }
