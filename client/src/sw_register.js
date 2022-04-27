@@ -1,3 +1,4 @@
+//https://felixgerschau.com/how-to-make-your-react-app-a-progressive-web-app-pwa/
 export default function sw_register() {
   //https://web.dev/offline-fallback-page/
   if (process.env.NODE_ENV === 'production') {

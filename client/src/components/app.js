@@ -3,11 +3,13 @@
 import { Router } from 'preact-router';
 import Home from './Home';
 
-const App = () => {
+const App = (props) => {
   return(
     <div id="app">
       <Router>
-        <Home path='/' />
+        <div path='/' style="padding:56px 20px;min-height:100%;width:100%;">
+          <Home />
+        </div>
       </Router>
     </div>
   );

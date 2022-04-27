@@ -1,8 +1,8 @@
 import { useState, useEffect } from 'preact/hooks';
 
 const UserSearch = () => {
-  const [search, setSearch] = useState('')
-  const [result, setResult] = useState('')
+  const [search, setSearch] = useState('');
+  const [result, setResult] = useState('');
 
   const onLayerSearch = () => {
     let term = document.getElementById("searchtxt").value;
