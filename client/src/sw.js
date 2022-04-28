@@ -39,9 +39,15 @@ registerRoute(
     }),
   );
 
+registerRoute(
+  ({ url }) => url.pathname.startsWith("/session/"),
+  new NetworkOnly({ //NetworkFirst
+        plugins: [bgSyncPlugin]
+  })
+);
 
 registerRoute(
-  ({ url }) => url.pathname.startsWith("/species/"),
+  ({ url }) => url.pathname.startsWith("/search/"),
   new NetworkOnly({ //NetworkFirst
         plugins: [bgSyncPlugin]
   })
@@ -59,4 +65,5 @@ setupRouting();
 
 const urlsToCache = getFiles();
 //urlsToCache.push({url: 'assets/icons/favicon.png', revision: null});
+//urlsToCache.push({url: 'https://www.gmrt.org/apple-touch-icon.png', revision: null});
 setupPrecaching(urlsToCache);

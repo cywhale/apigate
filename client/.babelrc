@@ -1,13 +1,9 @@
 {
-   "presets": [
-      ["preact-cli/babel", {
-          "modules": false,
-          "targets": "> 0.25%, not dead",
-          "useBuiltIns": "usage"
-      }]
-  ],
-  "compact": true,
-  "plugins": [
-    "@babel/plugin-syntax-dynamic-import"
-  ]
+  "env": {
+    "test": {
+      "presets": [
+        ["preact-cli/babel", { "modules": "commonjs" }]
+      ]
+    }
+  }
 }
