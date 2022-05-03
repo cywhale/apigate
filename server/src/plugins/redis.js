@@ -1,6 +1,6 @@
 'use strict'
 import fp from 'fastify-plugin'
-import redis from 'fastify-redis'
+import redis from '@fastify/redis'
 
 async function redisClient(fastify, opts) {
   fastify.register(redis,  {

@@ -1,7 +1,7 @@
 'use strict'
 import Fastify from 'fastify';
 import { readFileSync } from 'fs'
-import Env from 'fastify-env'
+import Env from '@fastify/env'
 import S from 'fluent-json-schema'
 import { join } from 'desm'
 import srvapp from './srvapp.js'

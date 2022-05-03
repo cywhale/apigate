@@ -1,4 +1,4 @@
-import AutoLoad from 'fastify-autoload'
+import AutoLoad from '@fastify/autoload'
 import { join } from 'desm'
 import mercurius from 'mercurius'
 import db from './config/db'

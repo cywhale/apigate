@@ -1,5 +1,5 @@
-import Static from 'fastify-static'
-import Helmet from 'fastify-helmet'
+import Static from '@fastify/static'
+import Helmet from '@fastify/helmet'
 //import path from 'path';
 import { join } from 'desm'
 
