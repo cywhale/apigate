@@ -1,5 +1,5 @@
 import Spkey from '../models/spkey_mongoose'
-import Sequelize from 'sequelize';
+//import Sequelize from 'sequelize';
 
 export const autoPrefix = process.env.NODE_ENV === 'production'? '/api' : '/apitest'
 
@@ -65,8 +65,8 @@ str(speed, 8, 3) as "Speed(m/s)"
 //ref: https://stackoverflow.com/questions/52987837/nodejs-unable-to-import-sequelize-js-model-es6
 
   const { sqldb } = fastify
-
-  sqldb.define('sadcp', {
+// if use Sequelize as solution 202205....
+/* sqldb.define('sadcp', {
     longitude: {type: Sequelize.FLOAT},
     latitude: {type: Sequelize.FLOAT},
     datetime: {type: Sequelize.STRING},
@@ -82,7 +82,7 @@ str(speed, 8, 3) as "Speed(m/s)"
   })
 
   const sadcpMdl = sqldb.models.sadcp
-
+*/
   const sadcpSchema = {
           longitude: { type: 'number' },
           latitude: { type: 'number' },
@@ -93,6 +93,7 @@ str(speed, 8, 3) as "Speed(m/s)"
           direction: { type: 'number' },
           speed: { type: 'number' }
   }
+
   fastify.get('/sadcp', {
     schema: {
       tags: ['sadcp'],
@@ -172,18 +173,18 @@ AND latitude_degree BETWEEN @INT_LAT0 AND @INT_LAT1
 Order by odb_cruise_id,[GMT+8],latitude_degree,longitude_degree,depth
 `
       //fastify.log.info("API Query sqldb: " + qry0 + qry1 + qry2)
+/* if use Sequelize
       const data= await sqldb.query(qry0 + qry1 + qry2, {
         //'SELECT TOP 2 longitude_degree as "longitude", latitude_degree as "latitude",' +
         //'convert(nchar(19),[GMT+8],126)as "datetime", Depth as "depth", u as "u", v as "v",' +
         //`direction as "direction", speed as "speed" From ${fastify.config.TABLE_SADCP}`, {
         model: sadcpMdl,
         mapToModel: true
-      })/*.then((data) => {
-        //fastify.log.info("Data found in sqldb: " + JSON.stringify(data))
-        reply.send(data)
-        next()
-      })*/
+      })
       reply.send(data)
-    })
+    })*/
+    const data= await sqldb.raw(qry0 + qry1 + qry2)
+    reply.send(data)
     next()
+  })
 }

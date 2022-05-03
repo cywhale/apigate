@@ -23,6 +23,51 @@ export default async function (fastify, opts, next) {
         queryDepth: 11
   })
 
+  fastify.register(import('./config/knexconn.js'), {
+    knexOptions: {
+      client: 'mssql',
+      connection: {
+        host: fastify.config.SQLSERVER,
+        user: fastify.config.SQLUSER,
+        password: fastify.config.SQLPASS,
+        database: fastify.config.SQLDBNAME,
+        port: fastify.config.SQLPORT,
+        options: {
+          cancelTimeout: 15000, //http://tediousjs.github.io/tedious/api-connection.html
+          requestTimeout: 120000,
+          connectTimeout: 20000,
+          encrypt: false,
+          trustServerCertificate: true,
+          multipleStatements: true,
+          validateBulkLoadParameters: false
+        }
+      },
+      pool: {
+        max: 15,
+        min: 0
+      }
+    }
+  }).ready(async () => {
+    try { // first connection
+      const { sqldb } = fastify
+      fastify.log.info({actor: 'Knex'}, 'Connected to mssql database & first query trial...')
+      // frist query, just a trial...
+      sqldb.raw(
+          'SELECT TOP 1 longitude_degree as "longitude", latitude_degree as "latitude",' +
+          'convert(nchar(19),[GMT+8],126)as "datetime", Depth as "depth", u as "u", v as "v",' +
+          `direction as "direction", speed as "speed" From ${fastify.config.TABLE_SADCP}`
+      ).then(data => {
+        fastify.log.info('Test first data' + JSON.stringify(data))
+        next()
+      })
+    } catch(err) {
+      fastify.log.error({actor: 'Knex'}, 'Error: Register failed.' + err.messsage)
+      next()
+    }
+  })
+
+/* Sequelize works 202205... (but then try knex.js)
+// commit:https://github.com/cywhale/apigate/commit/d4321bc6f03529bbd9eb335e2472c6f9c01077ff
   fastify.register(import('./config/sequelizer.js'), {
     instance: "sqldb",
     sequelizeOptions: {
@@ -78,10 +123,10 @@ export default async function (fastify, opts, next) {
     } catch(err) {
       fastify.log.error({actor: 'Sequelize'}, 'Error: Register failed.' + err.messsage)
       next()
-    } /*finally {
-      fastify.close()
-    }*/
-  })
+    } //finally {
+      //fastify.close()
+    //}
+  }) */
 
   fastify.register(AutoLoad, {
     dir: join(import.meta.url, 'plugins'),
