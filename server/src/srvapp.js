@@ -35,11 +35,20 @@ export default async function (fastify, opts, next) {
         dialect: 'mssql',
         dialectOptions: {
           options: {
+            cancelTimeout: 15000, //http://tediousjs.github.io/tedious/api-connection.html
+            requestTimeout: 120000,
+            connectTimeout: 20000,
             encrypt: false,
             trustServerCertificate: true,
             multipleStatements: true,
             validateBulkLoadParameters: false
           }
+        },
+        pool: {
+          max: 15,
+          min: 0,
+          acquire: 40000,
+          idle: 20000
         },
         sync: { force: false }
       }

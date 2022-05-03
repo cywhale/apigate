@@ -257,6 +257,7 @@ export default async function querygql (fastify, opts, next) {
         }
       })*/
       let name = decodeURIComponent(req.params.name)
+      let spx = name.replace(/ \([\s\S]*?\)/g, '') //"Acartia (Acartiura) longiremis" -> "Acartia longiremis"
       //if (name==="init") {
       //  return reply.graphql('{ init {ctxt} }')
       //}
@@ -272,7 +273,7 @@ export default async function querygql (fastify, opts, next) {
 */
       //req.log.info("Query use graphql: "+ query + " with sp: " + name)
       //return reply.graphql(infqry, null, {taxon: name, keystr: false, mode: 'all', first: def_pageSize}) //20220413 modified to KeyTree
-      return reply.graphql(ktreeqry, null, {sp: name})
+      return reply.graphql(ktreeqry, null, {sp: spx})
     })
 
     fastify.post('/keytree',
@@ -281,7 +282,8 @@ export default async function querygql (fastify, opts, next) {
         let taxon = parm.taxon??''
 
         if (taxon !== "" && taxon.toLowerCase() !== "all") {
-          return reply.graphql(ktreeqry, null, {sp: decodeURIComponent(taxon)})
+          let spx = taxon.replace(/ \([\s\S]*?\)/g, '') //"Acartia (Acartiura) longiremis" -> "Acartia longiremis"
+          return reply.graphql(ktreeqry, null, {sp: decodeURIComponent(spx)})
         } else {
           return
         }

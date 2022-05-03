@@ -7,13 +7,21 @@ async function cacheHandler (fastify, opts) {
   fastify.register(cache, {
     policy: {
       Query: {
-        taxontree: true,
-        infq: true
+        taxontree: {
+          ttl: 60 * 60 * 24
+        },
+        infq: {
+          ttl: 60 * 60 * 5,
+          storage: { type: 'memory' }
+        },
+        keytree: {
+          ttl: 60 * 60 * 24
+        }
       }
     },
-    ttl: 60 * 60 * 24,
+    //ttl: 60 * 60 * 24,
     storage: {
-      type: 'redis', options: { client: fastify.redis, invalidation: false }
+      type: 'redis', options: { client: fastify.redis, invalidation: true }
 /*  get: async function (key) {
         try {
           return JSON.parse(await fastify.redis.get(key))
@@ -49,7 +57,16 @@ async function cacheHandler (fastify, opts) {
       console.table(report)
     }
   })
-
+/*
+  fastify.addHook(
+    'onClose',
+    async () => {
+      fastify.log.info("Clear cache...")
+      await fastify.graphql.cache.clear()
+      //next()
+    }
+  )
+*/
   /* garbage collector
   let gcIntervalLazy, gcIntervalStrict
   let cursor = 0

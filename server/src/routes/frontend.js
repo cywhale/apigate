@@ -32,11 +32,19 @@ export default async function (fastify, opts) {
   //fastify.addHook('onRequest', authorize)
 
   fastify.register(Helmet, {
+    crossOriginEmbedderPolicy: false, //https://github.com/helmetjs/helmet/issues/343
     contentSecurityPolicy: {
       directives: {
         defaultSrc: ["'self'", "https:"],
+        frameAncestors: [
+          'https://nodeeco.firebaseapp.com/',
+          'https://bio.odb.ntu.edu.tw',
+          'https://ecodata.odb.ntu.edu.tw',
+          'https://odbsso.oc.ntu.edu.tw/'
+        ],
         frameSrc: [
           "'self'",
+          'https://nodeeco.firebaseapp.com',
           'https://ecodata.odb.ntu.edu.tw',
           'https://bio.odb.ntu.edu.tw',
           'https://odbsso.oc.ntu.edu.tw/'

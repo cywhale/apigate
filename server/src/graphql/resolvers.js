@@ -72,9 +72,11 @@ const resolvers = {
       },*/
       keys: async (_, obj, ctx) => {
         const { sp } = obj
-        let spx = decodeURIComponent(sp).replace(/(\s|\_)/g, "\\\s")
+        let spt = decodeURIComponent(sp)
+        let sp2 = spt.replace(/ \([\s\S]*?\)/g, '').replace(/(\s|\_)/g, "\\\s") //"Acartia (Acartiura) longiremis|Acartia (Euacartia) southwelli" -> Acartia longiremis|Acartia southwelli
+        let spx = spt.replace(/(\s|\_)/g, "\\\s")
         const keyx = await Spkey.find({$or:[
-                {"taxon": {$regex: spx, $options: "ix"} },
+                {"taxon": {$regex: sp2, $options: "ix"} },
                 {"fullname": {$regex: spx, $options: "ix"} },
                 {"genus": {$regex: spx, $options: "ix"} },
                 {"family": {$regex: spx, $options: "ix"} }
@@ -118,7 +120,7 @@ const resolvers = {
 //...
         ]).exec()
 */
-        ctx.reply.log.info("keytree search: " + sp + " result: " + JSON.stringify(keyx))
+        //ctx.reply.log.info("keytree search: " + sp + " result: " + JSON.stringify(keyx))
         return keyx
       },
 // ---------------------------------------------
@@ -152,6 +154,7 @@ const resolvers = {
         }
 
         let spt = decodeURIComponent(taxon).replace(/\_/g, ' ')
+        let sp2 = spt.replace(/ \([\s\S]*?\)/g, '').replace(/\s/g, '\\\s') //"Acartia (Acartiura) longiremis|Acartia (Euacartia) southwelli" -> Acartia longiremis|Acartia southwelli
         let spx = spt.replace(/\s/g, '\\\s')
         let genqstr = {"kcnt": {"$lt": 1000}}
         let spqstr = {"kcnt": {"$gte": 1000}}
@@ -175,11 +178,13 @@ const resolvers = {
               let sptt = modex.substring(modex.indexOf('sameTaxon:') + 10)
               ctx.reply.log.info("Perform sameTaxon search: " + spt + " taxon: " + sptt)
               if (sptt !== '') {
+                let spx2 = sptt.replace(/ \([\s\S]*?\)/g, '').replace(/\s/g, '\\\s')
+                let spxx = sptt.replace(/\s/g, '\\\s')
                 let qryt = {$or:[
-                             {"taxon": {$regex: sptt, $options: "ix"} },
-                             {"fullname": {$regex: sptt, $options: "ix"} },
-                             {"genus": {$regex: sptt, $options: "ix"} },
-                             {"family": {$regex: sptt, $options: "ix"} }
+                             {"taxon": {$regex: spx2, $options: "ix"} },
+                             {"fullname": {$regex: spxx, $options: "ix"} },
+                             {"genus": {$regex: spxx, $options: "ix"} },
+                             {"family": {$regex: spxx, $options: "ix"} }
                            ]}
                 spqry={...spqry, ...qryt}
               }
@@ -189,14 +194,14 @@ const resolvers = {
               spqry= {} //query all
             } else if (modex.match(/all/ig)) {
               spqry = {$or:[
-                {"taxon": {$regex: spx + '|Calanoida', $options: "ix"} },
+                {"taxon": {$regex: sp2 + '|Calanoida', $options: "ix"} },
                 {"fullname": {$regex: spx, $options: "ix"} },
                 {"genus": {$regex: spx, $options: "ix"} },
                 {"family": {$regex: spx, $options: "ix"} }
               ]}
             } else {
               spqry = {$or:[
-                {"taxon": {$regex: spx, $options: "ix"} },
+                {"taxon": {$regex: sp2, $options: "ix"} },
                 {"fullname": {$regex: spx, $options: "ix"} },
                 {"genus": {$regex: spx, $options: "ix"} },
                 {"family": {$regex: spx, $options: "ix"} }
