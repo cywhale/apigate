@@ -1,5 +1,12 @@
 import Spkey from '../models/spkey_mongoose'
-//import Sequelize from 'sequelize';
+import { stringify } from 'JSONStream' //stringifyObject
+//import { Transform } from 'stream'
+//import fastJson from 'fast-json-stringify'
+//import Sequelize from 'sequelize'
+
+//import parser from 'stream-json'
+//import streamArray from 'stream-json/streamers/StreamArray'
+//import zlib from 'zlib';
 
 export const autoPrefix = process.env.NODE_ENV === 'production'? '/api' : '/apitest'
 
@@ -172,8 +179,8 @@ AND longitude_degree BETWEEN @INT_LON0 AND @INT_LON1
 AND latitude_degree BETWEEN @INT_LAT0 AND @INT_LAT1 
 Order by odb_cruise_id,[GMT+8],latitude_degree,longitude_degree,depth
 `
-      //fastify.log.info("API Query sqldb: " + qry0 + qry1 + qry2)
-/* if use Sequelize
+    //fastify.log.info("API Query sqldb: " + qry0 + qry1 + qry2)
+/* ---- if use Sequelize ---------------------------------------
       const data= await sqldb.query(qry0 + qry1 + qry2, {
         //'SELECT TOP 2 longitude_degree as "longitude", latitude_degree as "latitude",' +
         //'convert(nchar(19),[GMT+8],126)as "datetime", Depth as "depth", u as "u", v as "v",' +
@@ -182,9 +189,54 @@ Order by odb_cruise_id,[GMT+8],latitude_degree,longitude_degree,depth
         mapToModel: true
       })
       reply.send(data)
-    })*/
+    })
     const data= await sqldb.raw(qry0 + qry1 + qry2)
     reply.send(data)
+    next() */
+
+  //Use stream 202205
+    //const toJson = new Transform({
+    //objectMode: true, //https://github.com/knex/knex/issues/2440
+      //transform(chunk, _, callback) {
+      //  this.push(JSON.stringify(chunk))
+      //  callback()
+      //}
+    /*transform({ key, value }, _, callback) {
+        if (key === 0) {
+          callback(null, `${JSON.stringify(value)}`)
+        } else {
+          callback(null, ,${JSON.stringify(value)}`)
+        }
+      }*/
+    //})
+    const pipex = (src, res) => { //, opts = {end: false})
+      return new Promise((resolve, reject) => {
+        src //it works
+        .pipe(stringify())
+        .pipe(res.raw)
+      /*src
+        .pipe(zlib.createGunzip())
+        .pipe(parser())
+        .pipe(new streamArray())
+        .on('data', data => res.raw.write(fastJson(sadcpSchema)(data)))*/
+        src.on('error', reject)
+        //stream.on('data', (data) => res.raw.write(fastJson(sadcpSchema)(data)))
+        src.on('end', () => {
+          //res.raw.write(']')
+          //res.raw.end()
+          resolve
+        })
+        //res.send(src.pipe(stringify()))
+      })
+    }
+    const stream = sqldb.raw(qry0 + qry1 + qry2).stream()
+    //reply.type('application/json')
+    stream._read = ()=>{}
+    await pipex(stream, reply)
+    req.on('close', () => {
+      stream.end();
+      //stream.destroy();
+    })
     next()
   })
 }
