@@ -1,6 +1,6 @@
 import Spkey from '../models/spkey_mongoose'
-import { stringify } from 'JSONStream' //stringifyObject
-//import { Transform } from 'stream'
+//import { stringify } from 'JSONStream' //stringifyObject
+//import { Readable } from 'node:stream' //Transform
 //import fastJson from 'fast-json-stringify'
 //import Sequelize from 'sequelize'
 
@@ -111,7 +111,8 @@ str(speed, 8, 3) as "Speed(m/s)"
             lat0: { type: 'number' },
             lat1: { type: 'number' },
             start: { type: 'string' },
-            end: { type: 'string'}
+            end: { type: 'string'},
+            limit: { type: 'integer'}
           }
       },
       response: {
@@ -129,36 +130,48 @@ str(speed, 8, 3) as "Speed(m/s)"
   async (req, reply) => {
       //fastify.log.info("APITEST: " + JSON.stringify(req.query))
       const qstr = req.query
-      let start='1991/01/01'
+      let start='1991-01-01'
       if (typeof qstr.start !== 'undefined') {
         if (/^\d+\.?\d*$/.test(qstr.start) && qstr.start.length===8) {
-          start = qstr.start.substring(0, 4) + '/' + qstr.start.substring(4, 6) + '/' + qstr.start.substring(6)
+          start = qstr.start.substring(0, 4) + '-' + qstr.start.substring(4, 6) + '-' + qstr.start.substring(6)
+          start = `"${start}"`
         }
       }
-      let end=''
+      let end = 'NULL' //'' before modifed query to stored procedure in mssql 20220505
       if (typeof qstr.end !== 'undefined') {
         if (/^\d+\.?\d*$/.test(qstr.end) && qstr.end.length===8) {
-          end = qstr.end.substring(0, 4) + '/' + qstr.end.substring(4, 6) + '/' + qstr.end.substring(6)
+          end = qstr.end.substring(0, 4) + '-' + qstr.end.substring(4, 6) + '-' + qstr.end.substring(6)
+          end = `"${end}"`
         }
       }
+      let limit = 'NULL'
+      if (typeof qstr.limit !== 'undefined') {
+        if (Number.isInteger(Number(qstr.limit)) && Number(qstr.limit) > 0) {
+          limit = parseInt(qstr.limit)
+        }
+      }
+
       let lon0 = qstr.lon0??105
       let lon1 = qstr.lon1??135
       let lat0 = qstr.lat0??2
       let lat1 = qstr.lat1??35
-
+      let qry=`USE [${fastify.config.SQLDBNAME}];
+      EXEC [dbo].[sadcpqry] @lon0=${lon0}, @lon1=${lon1}, @lat0=${lat0}, @lat1=${lat1}, @start=${start}, @end=${end}, @limit=${limit};`
+    //fastify.log.info("Query is: " + qry)
+/*
       let qry0= `DECLARE @DT_START DATETIME;
 DECLARE @DT_END DATETIME;
 DECLARE @INT_LON0 INT;
 DECLARE @INT_LON1 INT;
 DECLARE @INT_LAT0 INT;
 DECLARE @INT_LAT1 INT;
-SET @DT_START = '` + start + `';`
+SET @DT_START = ${start};`
 
       let qry1
       if (end==="") {
         qry1='SET @DT_END = DATEADD(yyyy, -3, DATEADD(dd, 0, DATEADD(mm, DATEDIFF(mm,0,getdate())+1, 0)));'
       } else {
-        qry1="SET @DT_END = '" + end + "';"
+        qry1='SET @DT_END = ${end};'
       }
       let qry2=`SET @INT_LON0=${lon0};
 SET @INT_LON1=${lon1};
@@ -173,13 +186,14 @@ Depth as "depth",
 u as "u",
 v as "v",
 direction as "direction",
-speed as "speed" From ${fastify.config.TABLE_SADCP} Where 1=1 
-AND [GMT+8] BETWEEN @DT_START AND @DT_END 
+speed as "speed" From ${fastify.config.TABLE_SADCP} Where [GMT+8] BETWEEN @DT_START AND @DT_END 
 AND longitude_degree BETWEEN @INT_LON0 AND @INT_LON1 
 AND latitude_degree BETWEEN @INT_LAT0 AND @INT_LAT1 
-Order by odb_cruise_id,[GMT+8],latitude_degree,longitude_degree,depth
-`
-    //fastify.log.info("API Query sqldb: " + qry0 + qry1 + qry2)
+Order by [GMT+8],longitude_degree,latitude_degree
+`*/
+   //-- Old query 20220505 modified, changed to stored procedure
+   //fastify.log.info("API Query sqldb: " + qry0 + qry1 + qry2)
+
 /* ---- if use Sequelize ---------------------------------------
       const data= await sqldb.query(qry0 + qry1 + qry2, {
         //'SELECT TOP 2 longitude_degree as "longitude", latitude_degree as "latitude",' +
@@ -201,42 +215,58 @@ Order by odb_cruise_id,[GMT+8],latitude_degree,longitude_degree,depth
       //  this.push(JSON.stringify(chunk))
       //  callback()
       //}
-    /*transform({ key, value }, _, callback) {
-        if (key === 0) {
-          callback(null, `${JSON.stringify(value)}`)
-        } else {
-          callback(null, ,${JSON.stringify(value)}`)
-        }
-      }*/
     //})
+    var count = 0;
     const pipex = (src, res) => { //, opts = {end: false})
       return new Promise((resolve, reject) => {
-        src //it works
+      /*src //it works
         .pipe(stringify())
-        .pipe(res.raw)
+        .pipe(res.raw) //, {end: false})*/
       /*src
         .pipe(zlib.createGunzip())
         .pipe(parser())
-        .pipe(new streamArray())
-        .on('data', data => res.raw.write(fastJson(sadcpSchema)(data)))*/
-        src.on('error', reject)
-        //stream.on('data', (data) => res.raw.write(fastJson(sadcpSchema)(data)))
+        .pipe(new streamArray()) */
+        src.on('data', chunk => {
+          let data = JSON.stringify(chunk)
+          count++
+          if (count % 999 === 0) {
+            fastify.log.info("--!!Count: " + count)
+            fastify.log.info("------!!Data: " + data)
+          }
+          res.raw.write(data) //fastJson(sadcpSchema)(data)))
+        })
+        src.on('error', () => {
+          fastify.log.info("------!!Stream Error!!-------")
+          //reject
+        })
         src.on('end', () => {
+          fastify.log.info("------!!Stream End!!-------")
+        })
+        src.on('finish', () => { //'end'
           //res.raw.write(']')
-          //res.raw.end()
+          fastify.log.info("------!!Stream finish!!-------")
+          res.raw.end() //https://stackoverflow.com/questions/70389882/nodejs-stream-returns-incomplete-response
+          res.sent = true
           resolve
         })
         //res.send(src.pipe(stringify()))
       })
     }
-    const stream = sqldb.raw(qry0 + qry1 + qry2).stream()
-    //reply.type('application/json')
+
+    const stream = sqldb //.raw(qry0 + qry1 + qry2).stream()
+                     .raw(qry).stream({ objectMode: true })
     stream._read = ()=>{}
+    //reply.header('Content-Type', 'application/stream+json')
+    reply.type('application/json')
     await pipex(stream, reply)
-    req.on('close', () => {
+  /*req.on('close', () => {
       stream.end();
       //stream.destroy();
-    })
+      fastify.log.info("------!!Stream input close!!-------");
+    })*/
+/*  NO-Stream mode, it works. */
+  //const data = await sqldb.raw(qry)
+  //reply.send(data)
     next()
   })
 }
