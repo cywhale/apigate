@@ -1,9 +1,9 @@
 import Spkey from '../models/spkey_mongoose'
+import S from 'fluent-json-schema'
 //import { stringify } from 'JSONStream' //stringifyObject
 //import { Readable } from 'node:stream' //Transform
 //import fastJson from 'fast-json-stringify'
 //import Sequelize from 'sequelize'
-
 //import parser from 'stream-json'
 //import streamArray from 'stream-json/streamers/StreamArray'
 //import zlib from 'zlib';
@@ -71,6 +71,28 @@ str(speed, 8, 3) as "Speed(m/s)"
 */
 //ref: https://stackoverflow.com/questions/52987837/nodejs-unable-to-import-sequelize-js-model-es6
 
+//ref: https://github.com/MatteoDiPaolo/googleTakeoutLocations-to-geoJson
+  const toGeoJsonRow = row => {
+    return {
+        type: 'Feature',
+        geometry: {
+            type: 'Point',
+            coordinates: [
+                row.longitude,
+                row.latitude,
+            ]
+        },
+        properties: {
+            datetime: row.datetime,
+            depth: row.depth || null,
+            u: row.u || null,
+            v: row.v || null,
+            direction: row.direction || null,
+            speed: row.speed || null
+        }
+    }
+  }
+
   const { sqldb } = fastify
 // if use Sequelize as solution 202205....
 /* sqldb.define('sadcp', {
@@ -87,20 +109,107 @@ str(speed, 8, 3) as "Speed(m/s)"
       timestamps: false,
       createdAt: false,
   })
-
   const sadcpMdl = sqldb.models.sadcp
 */
-  const sadcpSchema = {
-          longitude: { type: 'number' },
-          latitude: { type: 'number' },
-          datetime: { type: 'string' },
-          depth: { type: 'integer' },
-          u: { type: 'number' },
-          v: { type: 'number' },
-          direction: { type: 'number' },
-          speed: { type: 'number' }
-  }
+  const sadcpJsonSchema = S.object()
+    .id('#sadcpjson')
+    .prop('longitude', S.number())
+    .prop('latitude', S.number())
+    .prop('datetime', S.string())
+    .prop('depth', S.number())
+    .prop('u', S.number())
+    .prop('v', S.number())
+    .prop('direction', S.number())
+    .prop('speed', S.number())
+/*  {
+    longitude: { type: 'number' },
+    latitude: { type: 'number' },
+    datetime: { type: 'string' },
+    depth: { type: 'integer' },
+    u: { type: 'number' },
+    v: { type: 'number' },
+    direction: { type: 'number' },
+    speed: { type: 'number' }
+  }*/
 
+  const sadcpGJsonSchema = S.object()
+    .id('#sadcpgjson')
+    .prop('type', S.string())
+    .prop('geometry', S.object()
+        .prop('type', S.string())
+        .prop('coordinates', S.array().minItems(2).items(S.number())))
+    .prop('properties', S.object()
+        .prop('datetime', S.string())
+        .prop('depth', S.number())
+        .prop('u', S.number())
+        .prop('v', S.number())
+        .prop('direction', S.number())
+        .prop('speed', S.number()))
+/*{
+    $type: { type: 'string' },
+    geometry: {
+        $type: { type: 'string' },
+        coordinates: { type: 'array' }
+    },
+    properties: {
+        datetime: { type: 'string' },
+        depth: { type: 'number' },
+        u: { type: 'number' },
+        v: { type: 'number' },
+        direction: { type: 'number' },
+        speed: { type: 'number' }
+    }
+  }*/
+/*const sadcpSchema = {
+    oneOf: [
+      { $id: '#sadcpjson', type: 'object', properties: sadcpJsonSchema }, //, required: ['datetime'] },
+      { $id: '#sadcpgjson', type: 'object', properties: sadcpGJsonSchema } //, required: ['topic'] },
+    ]
+  }*/
+/*
+  const constraint = {
+    response: {
+      constraint: function (req) {
+        let format = req.query.format??'geojson'
+        fastify.log.info("Select Schema: " + format)
+        switch(format){
+          case 'json': return '#sadcpjson'
+          case 'geojson': return '#sadcpgjson'
+          default: return '#sadcpgjson'
+        }
+      }
+    }
+  }
+  fastify.register(import('../config/sadcpSchemaMdl.js'), constraint)
+*/
+  fastify.route({
+    url: '/sadcp',
+    method: ['GET'],
+    schema: {
+      querystring: {
+          lon0: { type: 'number' },
+          lon1: { type: 'number' },
+          lat0: { type: 'number' },
+          lat1: { type: 'number' },
+          start: { type: 'string' },
+          end: { type: 'string'},
+          std: { type: 'string'},
+          limit: { type: 'integer'},
+          mode: { type: 'string'},
+          format: { type: 'string'},
+          output: { type: 'string'}
+      },
+      response: {
+        200: //{
+          //type: 'object',
+          //properties: { //https://bit.ly/3vVD0Zg : fast-json-stringify doesn't support oneOf as the root object
+          //  response: sadcpSchema
+          //}
+          S.oneOf([sadcpGJsonSchema, sadcpJsonSchema])
+        //}
+      }
+    },
+/*
   fastify.get('/sadcp', {
     schema: {
       tags: ['sadcp'],
@@ -112,7 +221,11 @@ str(speed, 8, 3) as "Speed(m/s)"
             lat1: { type: 'number' },
             start: { type: 'string' },
             end: { type: 'string'},
-            limit: { type: 'integer'}
+            std: { type: 'string'},
+            limit: { type: 'integer'},
+            mode: { type: 'string'},
+            format: { type: 'string'},
+            output: { type: 'string'}
           }
       },
       response: {
@@ -126,9 +239,9 @@ str(speed, 8, 3) as "Speed(m/s)"
         }
       }
     }
-  },
-  async (req, reply) => {
-      //fastify.log.info("APITEST: " + JSON.stringify(req.query))
+  },*/
+  handler: async (req, reply) => {
+    //fastify.log.info("APITEST: " + JSON.stringify(req.query))
       const qstr = req.query
       let start='1991-01-01'
       if (typeof qstr.start !== 'undefined') {
@@ -155,6 +268,10 @@ str(speed, 8, 3) as "Speed(m/s)"
       let lon1 = qstr.lon1??135
       let lat0 = qstr.lat0??2
       let lat1 = qstr.lat1??35
+      let std = (qstr.std??'').toLowerCase() //'woa13': `dbo.NODC_Standard_depths_woa13 group by depth`
+      let mode = (qstr.mode??'average').toLowerCase() //'raw', may transfer huge data
+      let format = (qstr.format??'geojson').toLowerCase() //'json'
+      let output = (qstr.output??'').toLowerCase()    //'file', file output (not yet)
       let qry=`USE [${fastify.config.SQLDBNAME}];
       EXEC [dbo].[sadcpqry] @lon0=${lon0}, @lon1=${lon1}, @lat0=${lat0}, @lat1=${lat1}, @start=${start}, @end=${end}, @limit=${limit};`
     //fastify.log.info("Query is: " + qry)
@@ -227,12 +344,32 @@ Order by [GMT+8],longitude_degree,latitude_degree
         .pipe(parser())
         .pipe(new streamArray()) */
         src.on('data', chunk => {
-          let data = JSON.stringify(chunk)
+          let data
+          if (format === 'geojson') {
+            data = JSON.stringify(toGeoJsonRow(chunk))
+          } else {
+            data = JSON.stringify(chunk)
+          }
+          if (count === 0) {
+            if (format === 'geojson') {
+              res.raw.write(`{"type":"FeatureCollection","features": [`)
+              data = JSON.stringify(toGeoJsonRow(chunk))
+            } else {
+              res.raw.write(`[`)
+              data = JSON.stringify(chunk)
+            }
+          } else {
+            if (format === 'geojson') {
+              data =`,${JSON.stringify(toGeoJsonRow(chunk))}`;
+            } else {
+              data =`,${JSON.stringify(chunk)}`;
+            }
+          }
           count++
-          if (count % 999 === 0) {
+        /*if (count % 999 === 0) { //debug
             fastify.log.info("--!!Count: " + count)
             fastify.log.info("------!!Data: " + data)
-          }
+          }*/
           res.raw.write(data) //fastJson(sadcpSchema)(data)))
         })
         src.on('error', () => {
@@ -240,7 +377,12 @@ Order by [GMT+8],longitude_degree,latitude_degree
           //reject
         })
         src.on('end', () => {
-          fastify.log.info("------!!Stream End!!-------")
+          if (format === 'geojson') {
+            res.raw.write(`]}`)
+          } else {
+            res.raw.write(`]`)
+          } //'end' event will before 'finish'
+          //fastify.log.info("------!!Stream End!!-------")
         })
         src.on('finish', () => { //'end'
           //res.raw.write(']')
@@ -268,5 +410,6 @@ Order by [GMT+8],longitude_degree,latitude_degree
   //const data = await sqldb.raw(qry)
   //reply.send(data)
     next()
+  }
   })
 }
