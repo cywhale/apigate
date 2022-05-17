@@ -197,7 +197,8 @@ str(speed, 8, 3) as "Speed(m/s)"
           limit: { type: 'integer'},
           mode: { type: 'string'},
           format: { type: 'string'},
-          output: { type: 'string'}
+          output: { type: 'string'},
+          mean_threshld: { type: 'string'}
       },
       response: {
         200: //{
@@ -264,16 +265,21 @@ str(speed, 8, 3) as "Speed(m/s)"
         }
       }
 
+      let mean = true
+      let mode = (qstr.mode??'average').toLowerCase() //'raw', may transfer huge data
+      if (mode === 'raw' ) { mean = false }
+      //mean = `"${mean}"`
+
+      let mean_threshold = qstr.mean_threshold??30
       let lon0 = qstr.lon0??105
       let lon1 = qstr.lon1??135
       let lat0 = qstr.lat0??2
       let lat1 = qstr.lat1??35
       let std = (qstr.std??'').toLowerCase() //'woa13': `dbo.NODC_Standard_depths_woa13 group by depth`
-      let mode = (qstr.mode??'average').toLowerCase() //'raw', may transfer huge data
       let format = (qstr.format??'geojson').toLowerCase() //'json'
       let output = (qstr.output??'').toLowerCase()    //'file', file output (not yet)
       let qry=`USE [${fastify.config.SQLDBNAME}];
-      EXEC [dbo].[sadcpqry] @lon0=${lon0}, @lon1=${lon1}, @lat0=${lat0}, @lat1=${lat1}, @start=${start}, @end=${end}, @limit=${limit};`
+      EXEC [dbo].[sadcpqry] @lon0=${lon0}, @lon1=${lon1}, @lat0=${lat0}, @lat1=${lat1}, @start=${start}, @end=${end}, @limit=${limit}, @mean=${mean}, @mean_threshold=${mean_threshold};`
     //fastify.log.info("Query is: " + qry)
 /*
       let qry0= `DECLARE @DT_START DATETIME;
