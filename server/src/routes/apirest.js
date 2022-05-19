@@ -83,12 +83,13 @@ str(speed, 8, 3) as "Speed(m/s)"
             ]
         },
         properties: {
-            datetime: row.datetime,
-            depth: row.depth || null,
+            //datetime: row.datetime,
+            //depth: row.depth || null,
+            time_peorid: row.time_period,
             u: row.u || null,
-            v: row.v || null,
-            direction: row.direction || null,
-            speed: row.speed || null
+            v: row.v || null
+            //direction: row.direction || null,
+            //speed: row.speed || null
         }
     }
   }
@@ -115,12 +116,13 @@ str(speed, 8, 3) as "Speed(m/s)"
     .id('#sadcpjson')
     .prop('longitude', S.number())
     .prop('latitude', S.number())
-    .prop('datetime', S.string())
-    .prop('depth', S.number())
+    .prop('time_period', S.integer())
     .prop('u', S.number())
     .prop('v', S.number())
+    .prop('depth', S.number())
     .prop('direction', S.number())
     .prop('speed', S.number())
+    .prop('datetime', S.string())
 /*  {
     longitude: { type: 'number' },
     latitude: { type: 'number' },
@@ -139,12 +141,14 @@ str(speed, 8, 3) as "Speed(m/s)"
         .prop('type', S.string())
         .prop('coordinates', S.array().minItems(2).items(S.number())))
     .prop('properties', S.object()
-        .prop('datetime', S.string())
-        .prop('depth', S.number())
+        .prop('time_period', S.integer())
+        //.prop('datetime', S.string())
+        //.prop('depth', S.number())
         .prop('u', S.number())
         .prop('v', S.number())
-        .prop('direction', S.number())
-        .prop('speed', S.number()))
+        //.prop('direction', S.number())
+        //.prop('speed', S.number())
+       )
 /*{
     $type: { type: 'string' },
     geometry: {
@@ -198,7 +202,9 @@ str(speed, 8, 3) as "Speed(m/s)"
           mode: { type: 'string'},
           format: { type: 'string'},
           output: { type: 'string'},
-          mean_threshld: { type: 'string'}
+          mean_threshld: { type: 'string'},
+          xorder: { type: 'integer'},
+          yorder: { type: 'integer'}
       },
       response: {
         200: //{
@@ -265,10 +271,28 @@ str(speed, 8, 3) as "Speed(m/s)"
         }
       }
 
-      let mean = true
-      let mode = (qstr.mode??'average').toLowerCase() //'raw', may transfer huge data
-      if (mode === 'raw' ) { mean = false }
-      //mean = `"${mean}"`
+      /*let mean = true //20220518 modified stored procedure in SQL SERVER that parameter 'mean' is replaced by mode
+        let mode = (qstr.mode??'average').toLowerCase() //'raw', may transfer huge data
+        if (mode === 'raw' ) { mean = false } */
+      let mode = 'NULL'
+      if (typeof qstr.mode !== 'undefined') {
+        mode = qstr.mode.toLowerCase() //'raw', may transfer huge data
+        mode = `"${mode}"`
+      }
+
+      let xorder = 'NULL'
+      if (typeof qstr.xorder !== 'undefined') {
+        if (Number.isInteger(Number(qstr.xorder))) {
+          xorder = parseInt(qstr.xorder)
+        }
+      }
+
+      let yorder = 'NULL'
+      if (typeof qstr.yorder !== 'undefined') {
+        if (Number.isInteger(Number(qstr.yorder))) {
+          yorder = parseInt(qstr.yorder)
+        }
+      }
 
       let mean_threshold = qstr.mean_threshold??30
       let lon0 = qstr.lon0??105
@@ -279,7 +303,7 @@ str(speed, 8, 3) as "Speed(m/s)"
       let format = (qstr.format??'geojson').toLowerCase() //'json'
       let output = (qstr.output??'').toLowerCase()    //'file', file output (not yet)
       let qry=`USE [${fastify.config.SQLDBNAME}];
-      EXEC [dbo].[sadcpqry] @lon0=${lon0}, @lon1=${lon1}, @lat0=${lat0}, @lat1=${lat1}, @start=${start}, @end=${end}, @limit=${limit}, @mean=${mean}, @mean_threshold=${mean_threshold};`
+      EXEC [dbo].[sadcpqry] @lon0=${lon0}, @lon1=${lon1}, @lat0=${lat0}, @lat1=${lat1}, @start=${start}, @end=${end}, @limit=${limit}, @mode=${mode}, @mean_threshold=${mean_threshold}, @xorder=${xorder}, @yorder=${yorder};`
     //fastify.log.info("Query is: " + qry)
 /*
       let qry0= `DECLARE @DT_START DATETIME;
