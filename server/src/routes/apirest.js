@@ -71,6 +71,72 @@ str(speed, 8, 3) as "Speed(m/s)"
 */
 //ref: https://stackoverflow.com/questions/52987837/nodejs-unable-to-import-sequelize-js-model-es6
 
+  const grd15moa = deg => { return(parseInt((deg-0.125) / 0.25) * 0.25 + 0.25) } //gridded to 0.25-degree = 15 minute of arc
+
+  const grdMissingVal = (res, xmin, grdx, grdy, curx, cury, gcnt, gi, gj, ix, iy, nx, tp) => {
+  /*let period
+    if (mode === 'monsoon') {
+      period = [17,18]
+    } else if (mode === 'season') {
+      period = [13,14,15,16]
+    } else if (mode === 'month') {
+      period = [1,2,3,4,5,6,7,8,9,10,11,12]
+    } else {
+      period = [0]
+    }*/
+    let gap = 0
+    let ygap = 0
+    let xdif = 0
+    let xgap = 0
+    //let nval = null
+    let cx = curx
+    let cy = cury
+    if (cury !== grdy) {
+      ygap = parseInt((grdy - cury)/iy)
+      xdif = nx - parseInt((grdx - xmin)/ix)
+      xgap = parseInt((curx - xmin)/ix)
+      gap = xdif + (ygap-1) * nx + xgap //lat (y) is DESC in order
+      cy = grdy - ygap * iy
+      cx = xmin + xgap * ix
+      xdif = xgap
+    } else {
+      xgap = parseInt((curx - grdx)/ix)
+      gap = xgap
+      cx = grdx + xgap * ix
+      xdif = gi + xgap
+    }
+    let obj, str
+    for (let i = 0; i < gap; i++) {
+    /*  it works if all time-period missing value needed to be filled. but now only fill one
+      obj = tp.reduce((prev, curr) => {
+        let tx = {};
+        tx[`${curr}`] = {"u":null,"v":null}
+        return {...prev, ...tx}
+      },{})
+    */
+      obj = {}
+      obj[`${tp[0]}`] = {"u":null,"v":null}
+      if (gcnt === 0) {
+        str = `${JSON.stringify(obj)}`
+      } else {
+        if (i===0) {
+          str = `},${JSON.stringify(obj)}` //to end previous non-null {...,period:{u,v}}
+        } else {
+          str = `,${JSON.stringify(obj)}`
+        }
+      }
+      res.raw.write(str)
+    }
+    //fastify.log.info("Missing value UVgrid for x-y gap: " + xdif + "-" + ygap + ". Jump to cx,cy: " + cx + ", " + cy)
+    return {
+      cx: cx,
+      cy: cy,
+      gap: gap,
+      di: xdif,
+      dj: gj + ygap
+    }
+  }
+
 //ref: https://github.com/MatteoDiPaolo/googleTakeoutLocations-to-geoJson
   const toGeoJsonRow = row => {
     return {
@@ -85,7 +151,7 @@ str(speed, 8, 3) as "Speed(m/s)"
         properties: {
             //datetime: row.datetime,
             //depth: row.depth || null,
-            time_peorid: row.time_period,
+            //time_peorid: row.time_period,
             u: row.u || null,
             v: row.v || null
             //direction: row.direction || null,
@@ -248,7 +314,6 @@ str(speed, 8, 3) as "Speed(m/s)"
     }
   },*/
   handler: async (req, reply) => {
-    //fastify.log.info("APITEST: " + JSON.stringify(req.query))
       const qstr = req.query
       let start='1991-01-01'
       if (typeof qstr.start !== 'undefined') {
@@ -275,8 +340,16 @@ str(speed, 8, 3) as "Speed(m/s)"
         let mode = (qstr.mode??'average').toLowerCase() //'raw', may transfer huge data
         if (mode === 'raw' ) { mean = false } */
       let mode = 'NULL'
+      let period = [0]
       if (typeof qstr.mode !== 'undefined') {
         mode = qstr.mode.toLowerCase() //'raw', may transfer huge data
+        if (mode === 'monsoon') {
+          period = [17,18]
+        } else if (mode === 'season') {
+          period = [13,14,15,16]
+        } else if (mode === 'month') {
+          period = [1,2,3,4,5,6,7,8,9,10,11,12]
+        }
         mode = `"${mode}"`
       }
 
@@ -294,17 +367,25 @@ str(speed, 8, 3) as "Speed(m/s)"
         }
       }
 
+      let format = (qstr.format??'geojson').toLowerCase() //'json', 'geojson', 'uvgrid'
+      if (format === 'uvgrid') {
+        if (mode === 'raw') { mode = 'NULL' } //cannot be raw in uvgrid format
+        limit = 'NULL'
+        yorder = -2 //must DESC, and ordered by lat, lon
+        xorder = 1  //must increasing
+        //fastify.log.info("Test UVgrid mode: " + mode + " with period: " + JSON.stringify(period))
+      }
+
       let mean_threshold = qstr.mean_threshold??30
       let lon0 = qstr.lon0??105
       let lon1 = qstr.lon1??135
       let lat0 = qstr.lat0??2
       let lat1 = qstr.lat1??35
       let std = (qstr.std??'').toLowerCase() //'woa13': `dbo.NODC_Standard_depths_woa13 group by depth`
-      let format = (qstr.format??'geojson').toLowerCase() //'json'
       let output = (qstr.output??'').toLowerCase()    //'file', file output (not yet)
       let qry=`USE [${fastify.config.SQLDBNAME}];
       EXEC [dbo].[sadcpqry] @lon0=${lon0}, @lon1=${lon1}, @lat0=${lat0}, @lat1=${lat1}, @start=${start}, @end=${end}, @limit=${limit}, @mode=${mode}, @mean_threshold=${mean_threshold}, @xorder=${xorder}, @yorder=${yorder};`
-    //fastify.log.info("Query is: " + qry)
+      //fastify.log.info("Query is: " + qry)
 /*
       let qry0= `DECLARE @DT_START DATETIME;
 DECLARE @DT_END DATETIME;
@@ -363,7 +444,20 @@ Order by [GMT+8],longitude_degree,latitude_degree
       //  callback()
       //}
     //})
-    var count = 0;
+    var count = 0
+    let bbox = [grd15moa(lon0), grd15moa(lat0), grd15moa(lon1), grd15moa(lat1)]
+    let grdnx= parseInt((bbox[2]-bbox[0])/0.25) + 1
+    let grdny= parseInt((bbox[3]-bbox[1])/0.25) + 1
+    let dx = 0.25
+    let dy = 0.25
+    //if (format==="uvgrid") {fastify.log.info("UV-grids format wit bbox: " + bbox + " and grid number: " + grdnx)}
+    var dc = 0 //total counter: dc = di * dj //some grids are missing value, need fill null
+    var di = 0 //x-grid counter
+    var dj = 0 //y-grid counter
+    var dp = 0 //time-period counter
+    var gridx = bbox[0]
+    var gridy = bbox[3] // note that latitude is decreasing in uvgrid format
+    var chkmissFlag = true
     const pipex = (src, res) => { //, opts = {end: false})
       return new Promise((resolve, reject) => {
       /*src //it works
@@ -375,15 +469,61 @@ Order by [GMT+8],longitude_degree,latitude_degree
         .pipe(new streamArray()) */
         src.on('data', chunk => {
           let data
-          if (format === 'geojson') {
-            data = JSON.stringify(toGeoJsonRow(chunk))
-          } else {
-            data = JSON.stringify(chunk)
+          let stat = {"gap":0}
+
+          if (format === 'uvgrid') {
+            if (count > 0 && (chunk.longitude !== gridx || chunk.latitude !== gridy)) {
+              dp = 0 //dp is the counter of time-period, i.e if mode=='season', period is [13,14,15,16], dp is 0-1-2-3
+              if (di >= grdnx) { //within the same dp, the counter (di, dj) are disabled to keep in the same gridx, gridy
+                di = 0
+                dj = dj + 1
+                gridx = bbox[0]
+                gridy = gridy - dy
+              } else {
+                di = di + 1
+                gridx = gridx + dx
+              }
+              dc = dc + 1
+              //fastify.log.info("Now compare (i,j): (" + di + ", " + dj + ") for grid: " + gridx + ", " + gridy + " with chunk: " + chunk.longitude + ", " + chunk.latitude)
+              if (chunk.longitude === gridx && chunk.latitude === gridy) {
+                chkmissFlag = false
+              } else {
+                chkmissFlag = true
+              }
+            } else if (chunk.longitude === gridx && chunk.latitude === gridy) {
+              if (dp >= period.length) {
+                fastify.log.info("Warning: time-period counter error: " + dp + " with period: " + period.length + " at n-th data: " + count)
+              }
+              chkmissFlag = false //if within the same dp, no need to check missing value on that grid
+            } else {
+              chkmissFlag = true
+            }
           }
+
           if (count === 0) {
             if (format === 'geojson') {
               res.raw.write(`{"type":"FeatureCollection","features": [`)
               data = JSON.stringify(toGeoJsonRow(chunk))
+            } else if (format === 'uvgrid') { //JSON format for GFS: https://github.com/cambecc/grib2json/blob/master/README.md
+              res.raw.write(`{"header":{"periodMode":${mode},"periodArray":${JSON.stringify(period)},"parameterCategory":11,"parameterNumber":1,"parameterNumberName":"UV-grids","parameterUnit":"m.s-1","refTime":null,"forcastTime":0,"lo1":${bbox[0]},"la1":${bbox[1]},"lo2":${bbox[2]},"la2":${bbox[3]},"nx":${grdnx},"ny":${grdny},"dx":${dx},"dy":${dy}},"data":[`)
+              //if (chkmissFlag) { //count == 0 always check
+              stat = grdMissingVal(res, bbox[0], gridx, gridy, chunk.longitude, chunk.latitude, dc, di, dj, dx, dy, grdnx, period)
+              //}
+              if (stat.gap > 0) {
+                //if (dp === 0) { // means at start of period //here dp must 0
+                data =`,{"${chunk.time_period}":{${JSON.stringify({u:chunk.u,v:chunk.v})}`
+                di = stat.di
+                dj = stat.dj
+                dc = dc + stat.gap
+                gridx = stat.cx
+                gridy = stat.cy
+              } else {
+                data =`{"${chunk.time_period}":${JSON.stringify({u:chunk.u,v:chunk.v})}`
+              /*di = di + 1
+                dc = dc + 1
+                gridx = gridx + dx*/
+              }
+              dp = dp + 1
             } else {
               res.raw.write(`[`)
               data = JSON.stringify(chunk)
@@ -391,6 +531,28 @@ Order by [GMT+8],longitude_degree,latitude_degree
           } else {
             if (format === 'geojson') {
               data =`,${JSON.stringify(toGeoJsonRow(chunk))}`;
+            } else if (format === 'uvgrid') {
+              if (chkmissFlag) {
+                stat = grdMissingVal(res, bbox[0], gridx, gridy, chunk.longitude, chunk.latitude, dc, di, dj, dx, dy, grdnx, period)
+              }
+              if (stat.gap > 0) {
+                data =`,{"${chunk.time_period}":${JSON.stringify({u:chunk.u,v:chunk.v})}`
+                di = stat.di
+                dj = stat.dj
+                dc = dc + stat.gap
+                gridx = stat.cx
+                gridy = stat.cy
+              } else {
+                if (dp === 0) {
+                  data =`},{"${chunk.time_period}":${JSON.stringify({u:chunk.u,v:chunk.v})}`
+                } else {
+                  data =`,"${chunk.time_period}":${JSON.stringify({u:chunk.u,v:chunk.v})}`
+                }
+               /*di = di + 1
+                dc = dc + 1
+                gridx = gridx + dx*/
+              }
+              dp = dp + 1
             } else {
               data =`,${JSON.stringify(chunk)}`;
             }
@@ -409,6 +571,8 @@ Order by [GMT+8],longitude_degree,latitude_degree
         src.on('end', () => {
           if (format === 'geojson') {
             res.raw.write(`]}`)
+          } else if (format === 'uvgrid') {
+            res.raw.write(`}]}`)
           } else {
             res.raw.write(`]`)
           } //'end' event will before 'finish'
