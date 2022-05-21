@@ -117,7 +117,11 @@ str(speed, 8, 3) as "Speed(m/s)"
       obj = {}
       obj[`${tp[0]}`] = {"u":null,"v":null}
       if (gcnt === 0) {
-        str = `${JSON.stringify(obj)}`
+        if (i===0) {
+          str = `${JSON.stringify(obj)}`
+        } else {
+          str = `,${JSON.stringify(obj)}`
+        }
       } else {
         if (i===0) {
           str = `},${JSON.stringify(obj)}` //to end previous non-null {...,period:{u,v}}
@@ -335,7 +339,7 @@ str(speed, 8, 3) as "Speed(m/s)"
           limit = parseInt(qstr.limit)
         }
       }
-
+      //fastify.log.info("url: " + req.url)
       /*let mean = true //20220518 modified stored procedure in SQL SERVER that parameter 'mean' is replaced by mode
         let mode = (qstr.mode??'average').toLowerCase() //'raw', may transfer huge data
         if (mode === 'raw' ) { mean = false } */
@@ -505,13 +509,13 @@ Order by [GMT+8],longitude_degree,latitude_degree
               res.raw.write(`{"type":"FeatureCollection","features": [`)
               data = JSON.stringify(toGeoJsonRow(chunk))
             } else if (format === 'uvgrid') { //JSON format for GFS: https://github.com/cambecc/grib2json/blob/master/README.md
-              res.raw.write(`{"header":{"periodMode":${mode},"periodArray":${JSON.stringify(period)},"parameterCategory":11,"parameterNumber":1,"parameterNumberName":"UV-grids","parameterUnit":"m.s-1","refTime":null,"forcastTime":0,"lo1":${bbox[0]},"la1":${bbox[1]},"lo2":${bbox[2]},"la2":${bbox[3]},"nx":${grdnx},"ny":${grdny},"dx":${dx},"dy":${dy}},"data":[`)
+              res.raw.write(`{"header":{"periodMode":${mode},"periodArray":${JSON.stringify(period)},"parameterCategory":11,"parameterNumber":1,"parameterNumberName":"UV-grids","parameterUnit":"m.s-1","refTime":null,"forcastTime":0,"lo1":${bbox[0]},"la1":${bbox[3]},"lo2":${bbox[2]},"la2":${bbox[1]},"nx":${grdnx},"ny":${grdny},"dx":${dx},"dy":${dy}},"data":[`)
               //if (chkmissFlag) { //count == 0 always check
               stat = grdMissingVal(res, bbox[0], gridx, gridy, chunk.longitude, chunk.latitude, dc, di, dj, dx, dy, grdnx, period)
               //}
               if (stat.gap > 0) {
                 //if (dp === 0) { // means at start of period //here dp must 0
-                data =`,{"${chunk.time_period}":{${JSON.stringify({u:chunk.u,v:chunk.v})}`
+                data =`,{"${chunk.time_period}":${JSON.stringify({u:chunk.u,v:chunk.v})}`
                 di = stat.di
                 dj = stat.dj
                 dc = dc + stat.gap

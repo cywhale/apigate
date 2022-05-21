@@ -1,4 +1,5 @@
 import AutoLoad from '@fastify/autoload'
+import Cors from '@fastify/cors'
 import { join } from 'desm'
 import mercurius from 'mercurius'
 import db from './config/db'
@@ -128,14 +129,21 @@ export default async function (fastify, opts, next) {
     //}
   }) */
 
+  fastify.register(Cors, {
+    credentials: true,
+    allowedHeaders: ["Origin, X-Requested-With, Content-Type, Accept"],
+    //origin: false
+    origin: ["https://eco.odb.ntu.edu.tw","https://ecodata.odb.ntu.edu.tw","https://bio.odb.ntu.edu.tw"]
+  })
+
   fastify.register(AutoLoad, {
     dir: join(import.meta.url, 'plugins'),
     options: Object.assign({}, opts)
   })
 
   fastify.register(AutoLoad, {
-      dir: join(import.meta.url, 'routes'),
-      dirNameRoutePrefix: false,
-      options: Object.assign({}, opts)
+    dir: join(import.meta.url, 'routes'),
+    dirNameRoutePrefix: false,
+    options: Object.assign({}, opts)
   })
 }
