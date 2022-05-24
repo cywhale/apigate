@@ -5,10 +5,10 @@
 	"description": "fastify API gateway with preact-client",
 	"main": "index.js",
 	"scripts": {
-		"start": "node --es-module-specifier-resolution=node ./src/index.js",
-		"dev": "nodemon --es-module-specifier-resolution=node ./src/index.js",
-		"prod": "export NODE_ENV=production && export PORT=3000 && nodemon --es-module-specifier-resolution=node ./src/index.js",
-		"dev-client": "export NODE_ENV=development && export PORT=3003 && nodemon --es-module-specifier-resolution=node ./src/index.js"
+		"start": "export NODE_OPTIONS=--max_old_space_size=8192 && node --es-module-specifier-resolution=node ./src/index.js",
+		"dev": "export NODE_OPTIONS=--max_old_space_size=8192 && nodemon --es-module-specifier-resolution=node ./src/index.js",
+		"prod": "export NODE_OPTIONS=--max_old_space_size=8192 && export NODE_ENV=production && export PORT=3000 && nodemon --es-module-specifier-resolution=node ./src/index.js",
+		"dev-client": "export NODE_OPTIONS=--max_old_space_size=8192 && NODE_ENV=development && export PORT=3003 && nodemon --es-module-specifier-resolution=node ./src/index.js"
 	},
 	"keywords": [
 		"fastify",
@@ -30,6 +30,7 @@
 		"fluent-json-schema": "^3.1.0",
 		"fs": "^0.0.2",
 		"knex": "^2.0.0",
+		"lru-cache": "^7.10.1",
 		"mercurius": "^9.4.0",
 		"mercurius-cache": "^1.7.1",
 		"mongoose": "^6.3.2"

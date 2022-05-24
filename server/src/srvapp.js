@@ -5,6 +5,8 @@ import mercurius from 'mercurius'
 import db from './config/db'
 import schema from './graphql/schema'
 import resolvers from './graphql/resolvers'
+import fs from 'fs'
+import { Readable } from 'node:stream'
 
 export default async function (fastify, opts, next) {
   fastify.decorate('conf', {
@@ -62,7 +64,46 @@ export default async function (fastify, opts, next) {
         next()
       })
     } catch(err) {
-      fastify.log.error({actor: 'Knex'}, 'Error: Register failed.' + err.messsage)
+      fastify.log.error({actor: 'Knex'}, 'Error: Register failed.' + err)
+      next()
+    }
+  })
+
+  fastify.register(import('./config/streamBufferCache.js')) //, {
+  fastify.register(import('./config/streamCache.js'), {
+    max: 40000,
+    ttl: 1000 * 60 * 60 * 72
+  }).ready(async () => {
+    try {
+      const { streamCache } = fastify
+      fastify.log.info({actor: 'streamBufferCache'}, 'Test key...')
+      let test_key = [{"1":"start"},{"2":"ok"}]
+      let testrs = //Readable.from(test_key)
+          new Readable({
+            objectMode: true,
+            //encoding: 'utf8',
+            read() {
+              const item = JSON.stringify(test_key.shift()) //Buffer.from(test_key.shift(), 'utf8')
+              if (!item) {
+                this.push(null)
+                return
+              }
+              this.push(item)
+            }
+          })
+      //fs.createReadStream('./tests/test_key.json', { encoding: 'utf8' }).pipe(streamCache.set('test'));
+      testrs.pipe(streamCache.set('test2'))
+      if (streamCache.get('test2')) {
+        fastify.log.info({actor: 'streamBufferCache'}, 'Cache Test Hit!! ' +
+                         streamCache.max) // + " key: " + streamCache.keyList )
+        streamCache.get('test2')
+          .pipe(fs.createWriteStream('./tests/buffer-cache.js.test'))
+      } else {
+        fastify.log.info({actor: 'streamBufferCache'}, '!!Cache Test Miss')
+      }
+      next()
+    } catch(err) {
+      fastify.log.error({actor: 'streamBufferCache'}, 'Error: Register failed.' + err)
       next()
     }
   })
