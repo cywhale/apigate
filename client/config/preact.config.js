@@ -152,7 +152,8 @@ const other_config = (config, env) => {
       contentBase: path.join(__dirname, 'dist'),
       //https: true, //deprecated
       server: {
-        type: 'https',
+        //type: 'https', //old, deprecated
+        server: 'https',
         options: {
           key: 'privkey.pem',
           cert: 'fullchain.pem'

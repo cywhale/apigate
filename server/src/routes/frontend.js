@@ -49,11 +49,11 @@ export default async function (fastify, opts) {
           'https://bio.odb.ntu.edu.tw',
           'https://odbsso.oc.ntu.edu.tw/'
         ],
-        scriptSrc: ["'self'", "https:", "'unsafe-eval'"],
-        //'https://bio.odb.ntu.edu.tw',
+        scriptSrc: ["'self'", "https:", "'unsafe-eval'",
+          'https://bio.odb.ntu.edu.tw',
         //'https://ecodata.odb.ntu.edu.tw',
         //'https://odbsso.oc.ntu.edu.tw/',
-        //],
+        ],
         connectSrc: ["'self'", "https:"],
         //'https://bio.odb.ntu.edu.tw',
         //'https://ecodata.odb.ntu.edu.tw',
@@ -71,22 +71,22 @@ export default async function (fastify, opts) {
 
 //fastify.get(url, opts={schema:{...}}, handler) ==> fastify.route({method:, url:, schemal:, handler:...})
 //https://web.dev/codelab-text-compression-brotli
-
-  fastify.get('*.(js|json)', fopts, (req, res, next) => {
+/*
+  fastify.get('*.(js|json)', fopts, (req, res) => { //, next
       if (req.header('Accept-Encoding').includes('br')) {
         req.url = req.url + '.br';
-      //console.log(req.header('Accept-Encoding Brotli'));
+        //fastify.log.info(req.header('Accept-Encoding Brotli'));
         res.header('Content-Encoding', 'br');
         res.header('Content-Type', 'application/javascript; charset=UTF-8');
       } else {
         req.url = req.url + '.gz';
-      //console.log(req.header('Accept-Encoding Gzip'));
+        //fastify.log.info(req.header('Accept-Encoding Gzip'));
         res.header('Content-Encoding', 'gzip');
         res.header('Content-Type', 'application/javascript; charset=UTF-8');
       }
-      next();
+      //next();
   })
-
+*/
   if (fastify.conf.port !== fastify.conf.devTestPort) {
       //fastify.conf.port !== fastify.conf.srvTestPort) { // for testing
     fastify.register(Static, {
