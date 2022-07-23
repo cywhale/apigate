@@ -157,10 +157,10 @@ str(speed, 8, 3) as "Speed(m/s)"
         },
         properties: {
             //datetime: row.datetime,
-            //depth: row.depth || null,
-            //time_peorid: row.time_period,
+            time_peorid: row.time_period || null,
             u: row.u || null,
-            v: row.v || null
+            v: row.v || null,
+            depth: row.depth || null
             //direction: row.direction || null,
             //speed: row.speed || null
         }
@@ -196,6 +196,9 @@ str(speed, 8, 3) as "Speed(m/s)"
     .prop('direction', S.number())
     .prop('speed', S.number())
     .prop('datetime', S.string())
+    .prop('year', S.integer())
+    .prop('month', S.integer())
+    .prop('count', S.integer())
 /*  {
     longitude: { type: 'number' },
     latitude: { type: 'number' },
@@ -216,9 +219,9 @@ str(speed, 8, 3) as "Speed(m/s)"
     .prop('properties', S.object()
         .prop('time_period', S.integer())
         //.prop('datetime', S.string())
-        //.prop('depth', S.number())
         .prop('u', S.number())
         .prop('v', S.number())
+        .prop('depth', S.number())
         //.prop('direction', S.number())
         //.prop('speed', S.number())
        )
@@ -268,16 +271,17 @@ str(speed, 8, 3) as "Speed(m/s)"
           lon1: { type: 'number' },
           lat0: { type: 'number' },
           lat1: { type: 'number' },
-          start: { type: 'string' },
-          end: { type: 'string'},
-          std: { type: 'string'},
-          limit: { type: 'integer'},
+          dep0: { type: 'number' },
+          dep1: { type: 'number' },
+          dep_mode: { type: 'string'},
           mode: { type: 'string'},
           format: { type: 'string'},
-          output: { type: 'string'},
-          mean_threshld: { type: 'string'},
           xorder: { type: 'integer'},
-          yorder: { type: 'integer'}
+          yorder: { type: 'integer'},
+          start: { type: 'string' },
+          end: { type: 'string'},
+          limit: { type: 'integer'},
+          mean_threshld: { type: 'string'}
       },
       response: {
         200: //{
@@ -304,8 +308,7 @@ str(speed, 8, 3) as "Speed(m/s)"
             std: { type: 'string'},
             limit: { type: 'integer'},
             mode: { type: 'string'},
-            format: { type: 'string'},
-            output: { type: 'string'}
+            format: { type: 'string'}
           }
       },
       response: {
@@ -323,23 +326,41 @@ str(speed, 8, 3) as "Speed(m/s)"
   handler: async (req, reply) => {
       const qstr = req.query
       let start='1991-01-01'
-      if (typeof qstr.start !== 'undefined') {
-        if (/^\d+\.?\d*$/.test(qstr.start) && qstr.start.length===8) {
-          start = qstr.start.substring(0, 4) + '-' + qstr.start.substring(4, 6) + '-' + qstr.start.substring(6)
-        }
-      }
-      let qkey = start
-      start = `"${start}"`
-
       let end = 'NULL' //'' before modifed query to stored procedure in mssql 20220505
-      if (typeof qstr.end !== 'undefined') {
-        if (/^\d+\.?\d*$/.test(qstr.end) && qstr.end.length===8) {
-          end = qstr.end.substring(0, 4) + '-' + qstr.end.substring(4, 6) + '-' + qstr.end.substring(6)
-          qkey = qkey + '_' + end
+      let allspan_avg_flag = 1 // modified 20220720: 2:for all time-span use sadcpavg procedure to fetch pre-calculated table
+                               // 1: have time-specific requirement use sadcpgridqry procedure (yyyymm);
+                               // 0: only for non gridded raw mode: sadcpqry
+      let qkey = ''
+      if (typeof qstr.start == 'undefined' && typeof qstr.end == 'undefined') {
+        allspan_avg_flag = 2
+        qkey = start + '_NA'
+        start = `"${start}"`
+        end = `"${end}"`
+      } else {
+        if (typeof qstr.start !== 'undefined') {
+          if (/^\d+\.?\d*$/.test(qstr.start) && qstr.start.length===8) {
+            start = qstr.start.substring(0, 4) + '-' + qstr.start.substring(4, 6) + '-' + qstr.start.substring(6)
+          }
+        }
+        qkey = start
+        start = `"${start}"`
+
+        if (typeof qstr.end !== 'undefined') {
+          if (/^\d+\.?\d*$/.test(qstr.end) && qstr.end.length===8) {
+            end = qstr.end.substring(0, 4) + '-' + qstr.end.substring(4, 6) + '-' + qstr.end.substring(6)
+            qkey = qkey + '_' + end
+          }
+        }
+        if (Date.parse(start) <= Date.parse('1991-12-31') && (end === 'NULL' ||
+            Date.parse(end) > Date.parse((parseInt(new Date().getFullYear())-1).toString() + '-12-31'))) {
+          allspan_avg_flag = 2
+        }
+        if (end === 'NULL') {
+          qkey = qkey + '_NA'
+        } else {
           end = `"${end}"`
         }
       }
-      if (end === 'NULL') { qkey = qkey + '_' + 'NA' }
 
       let limit = 'NULL'
       if (typeof qstr.limit !== 'undefined') {
@@ -349,9 +370,24 @@ str(speed, 8, 3) as "Speed(m/s)"
         }
       }
       //fastify.log.info("url: " + req.url)
+      // 202207: addd dep_mode for depth ('range', 'mean', 'exact': use only dep0)
+      let dep_mode = 'NULL'
+      if (typeof qstr.dep_mode !== 'undefined') {
+        dep_mode = qstr.dep_mode.toLowerCase()
+        if (dep_mode !== 'range' && dep_mode !== 'mean' && dep_mode !== 'exact') {
+          dep_mode = 'NULL'
+        }
+      }
+      if (dep_mode === 'NULL') {
+        qkey = qkey + '_NA'
+      } else {
+        qkey = qkey + '_' + dep_mode
+        dep_mode = `"${dep_mode}"`
+      }
       /*let mean = true //20220518 modified stored procedure in SQL SERVER that parameter 'mean' is replaced by mode
         let mode = (qstr.mode??'average').toLowerCase() //'raw', may transfer huge data
         if (mode === 'raw' ) { mean = false } */
+      // 202207: add raw0: means real raw data; raw1: gridded raw data but all limit 10000
       let mode = 'NULL'
       let period = [0]
       if (typeof qstr.mode !== 'undefined') {
@@ -362,12 +398,19 @@ str(speed, 8, 3) as "Speed(m/s)"
           period = [13,14,15,16]
         } else if (mode === 'month') {
           period = [1,2,3,4,5,6,7,8,9,10,11,12]
-        } else if (mode === 'raw') {
+        } else if (/^raw/.test(mode)) { //(mode === 'raw') {
           if (limit === 'NULL' || limit >= 10000) { limit = 10000 }
         } else {
-          mode = 'default'
+          mode = 'default' //default: is year mean
         }
         qkey = qkey + '_' + mode
+        if (mode === 'raw0') {
+          allspan_avg_flag = 0
+          mode = 'raw'
+        } else if (/^raw/.test(mode)) { //i.e. raw or raw1
+          allspan_avg_flag = 1
+          mode = 'raw'
+        }
         mode = `"${mode}"`
       }
       if (mode === 'NULL') { qkey = qkey + '_' + 'default' }
@@ -388,7 +431,13 @@ str(speed, 8, 3) as "Speed(m/s)"
 
       let format = (qstr.format??'geojson').toLowerCase() //'json', 'geojson', 'uvgrid'
       if (format === 'uvgrid') {
-        if (mode === 'raw') { mode = 'NULL' } //cannot be raw in uvgrid format
+        if (/raw/.test(mode)) {
+          mode = 'NULL';
+          allspan_avg_flag = 1 //cannot be raw in uvgrid format
+        }
+        if (dep_mode === 'NULL' || /range/.test(dep_mode)) {
+          dep_mode = 'mean';  //cannot be multiple values for depth in uvgrid format
+        }
         limit = 'NULL'
         yorder = -2 //must DESC, and ordered by lat, lon
         xorder = 1  //must increasing
@@ -396,15 +445,32 @@ str(speed, 8, 3) as "Speed(m/s)"
       }
       qkey = qkey + '_' + format
 
-      let mean_threshold = qstr.mean_threshold??30
+      if (mode === 'raw') {
+        allspan_avg_flag = false
+      }
+      let mean_threshold = qstr.mean_threshold??-1
       let lon0 = qstr.lon0??105
       let lon1 = qstr.lon1??135
       let lat0 = qstr.lat0??2
       let lat1 = qstr.lat1??35
-      let std = (qstr.std??'').toLowerCase() //'woa13': `dbo.NODC_Standard_depths_woa13 group by depth`
-      let output = (qstr.output??'').toLowerCase()    //'file', file output (not yet)
-      let qry=`USE [${fastify.config.SQLDBNAME}];
-      EXEC [dbo].[sadcpqry] @lon0=${lon0}, @lon1=${lon1}, @lat0=${lat0}, @lat1=${lat1}, @start=${start}, @end=${end}, @limit=${limit}, @mode=${mode}, @mean_threshold=${mean_threshold}, @xorder=${xorder}, @yorder=${yorder};`
+      let dep0 = qstr.dep0??-1
+      let dep1 = qstr.dep1??-1
+      //let std = (qstr.std??'').toLowerCase() //'woa13': `dbo.NODC_Standard_depths_woa13 group by depth`
+      //let output = (qstr.output??'').toLowerCase()    //'file', file output (not yet)
+      let qry = `USE [${fastify.config.SQLDBNAME}];
+                 EXEC [dbo].`
+      if (allspan_avg_flag==2) {
+        fastify.log.info("Note: Only query stored mean-field table by sadcpavg procedure!")
+        qry= qry + `[sadcpavg] @lon0=${lon0}, @lon1=${lon1}, @lat0=${lat0}, @lat1=${lat1}, @dep0=${dep0}, @dep1=${dep1}, @dep_mode=${dep_mode}, ` +
+                   `@mode=${mode}, @xorder=${xorder}, @yorder=${yorder}, @limit=${limit}, @mean_threshold=${mean_threshold};`
+      } else if (allspan_avg_flag==1) {
+        fastify.log.info("Note: Only query stored mean-field table by sadcpgridqry procedure!")
+        qry= qry + `[sadcpgridqry] @lon0=${lon0}, @lon1=${lon1}, @lat0=${lat0}, @lat1=${lat1}, @dep0=${dep0}, @dep1=${dep1}, @dep_mode=${dep_mode}, ` +
+                   `@mode=${mode}, @xorder=${xorder}, @yorder=${yorder}, @start=${start}, @end=${end}, @limit=${limit}, @mean_threshold=${mean_threshold};`
+      } else {
+        qry= qry + `[sadcpqry] @lon0=${lon0}, @lon1=${lon1}, @lat0=${lat0}, @lat1=${lat1}, @dep0=${dep0}, @dep1=${dep1}, @dep_mode=${dep_mode}, ` +
+                   `@mode=${mode}, @xorder=${xorder}, @yorder=${yorder}, @start=${start}, @end=${end}, @limit=${limit}, @mean_threshold=${mean_threshold};`
+      }
       //let qkey=`${lon0}_${lon1}_${lat0}_${lat1}_${start}_${end}_${limit}_${mode}_${mean_threshold}_${xorder}_${yorder}`
       if (limit === 'NULL') {
         qkey = qkey + '_' + 'NA'
@@ -422,8 +488,9 @@ str(speed, 8, 3) as "Speed(m/s)"
         qkey = qkey + '_' + yorder.toString()
       }
       qkey = qkey + '_' + mean_threshold.toString() + '_' + lon0.toString() + '_' + lon1.toString() +
-             '_' + lat0.toString() + '_' + lat1.toString()
-    //fastify.log.info("Query key is: " + qkey)
+             '_' + lat0.toString() + '_' + lat1.toString() + '_' + dep0.toString() + '_' + dep1.toString()
+      fastify.log.info("Query key is: " + qkey)
+      fastify.log.info("Query command is: " + qry)
 /*
       let qry0= `DECLARE @DT_START DATETIME;
 DECLARE @DT_END DATETIME;
