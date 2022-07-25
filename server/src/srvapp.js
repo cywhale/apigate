@@ -172,6 +172,7 @@ export default async function (fastify, opts, next) {
 
   fastify.register(Cors, {
     credentials: true,
+    //preflight: false,
     allowedHeaders: ["Origin, X-Requested-With, Content-Type, Accept"],
     //origin: false
     origin: ["https://eco.odb.ntu.edu.tw","https://ecodata.odb.ntu.edu.tw","https://bio.odb.ntu.edu.tw"]

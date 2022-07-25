@@ -18,7 +18,7 @@ const apiConf = {
         description: 'Find more info here'
       },
       host: 'ecodata.odb.ntu.edu.tw',
-      schemes: ['v1'],
+      schemes: ['http'],
       consumes: ['application/json'],
       produces: ['application/json']
     }

@@ -266,6 +266,8 @@ str(speed, 8, 3) as "Speed(m/s)"
     url: '/sadcp',
     method: ['GET'],
     schema: {
+      description: 'ODB SADCP API',
+      tags: ['sadcp'],
       querystring: {
           lon0: { type: 'number' },
           lon1: { type: 'number' },
