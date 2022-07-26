@@ -55,8 +55,8 @@ const startServer = async () => {
     if (err) console.error(err) //console.log(fastify.config)
   })
 
-  fastify.register(srvapp) //old: use fastify-mongodb, but not work used in graphql resolvers
   fastify.register(Swagger, apiConf)
+  fastify.register(srvapp) //old: use fastify-mongodb, but not work used in graphql resolvers
 
   fastify.listen({ port: PORT }, function (err, address) {
     if (err) {

@@ -9,20 +9,21 @@ const apiConf = {
     exposeRoute: true,
     swagger: {
       info: {
-        title: 'Test API',
+        title: 'ODB Test API',
         description: 'APIGATE Manual',
         version: '1.0.0'
       },
-      externalDocs: {
-        url: 'https://swagger.io',
-        description: 'Find more info here'
-      },
+      //externalDocs: {
+      //  url: 'https://swagger.io',
+      //  description: 'Find more info here'
+      //},
       host: 'ecodata.odb.ntu.edu.tw',
-      schemes: ['http'],
+      schemes: ['https'],
       consumes: ['application/json'],
       produces: ['application/json']
-    }
-//}
+    },
+    uiConfig: { validatorUrl: null }
+//} //https://github.com/fastify/fastify-swagger/issues/191
 }
 export default apiConf
 /*

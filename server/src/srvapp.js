@@ -1,10 +1,10 @@
 import AutoLoad from '@fastify/autoload'
 import Cors from '@fastify/cors'
 import { join } from 'desm'
-import mercurius from 'mercurius'
+//import mercurius from 'mercurius'
 import db from './config/db'
-import schema from './graphql/schema'
-import resolvers from './graphql/resolvers'
+//import schema from './graphql/schema'
+//import resolvers from './graphql/resolvers'
 import fs from 'fs'
 import { Readable } from 'node:stream'
 
@@ -17,7 +17,7 @@ export default async function (fastify, opts, next) {
   })
 
   fastify.register(db, { url: fastify.config.MONGO_CONNECT }) //use mongoose
-
+/*
   fastify.register(mercurius, {
         schema: schema,
         resolvers: resolvers,
@@ -25,7 +25,7 @@ export default async function (fastify, opts, next) {
         jit: 1,
         queryDepth: 11
   })
-
+*/
   fastify.register(import('./config/knexconn.js'), {
     knexOptions: {
       client: 'mssql',

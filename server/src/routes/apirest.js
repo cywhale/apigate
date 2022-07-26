@@ -1,4 +1,4 @@
-import Spkey from '../models/spkey_mongoose'
+//import Spkey from '../models/spkey_mongoose'
 import S from 'fluent-json-schema'
 //import { stringify } from 'JSONStream' //stringifyObject
 import { Readable } from 'node:stream' //Transform, PassThrough
@@ -11,45 +11,6 @@ import { Readable } from 'node:stream' //Transform, PassThrough
 export const autoPrefix = process.env.NODE_ENV === 'production'? '/api' : '/apitest'
 
 export default async function apirest (fastify, opts, next) {
-
-    fastify.get('/taxonomy', async (req, reply) => {
-        const keyx = await Spkey
-                           .aggregate([
-                             { $match: {taxon: {"$ne": ""}, unikey: {"$regex": /^(?!00a_genus).*/i}} },
-                             { $group: {
-                                   _id: {
-                                     family: "$family",
-                                     genus: "$genus"
-                                   },
-                                   children: { $addToSet: {
-                                     taxon: "$taxon"
-                                   } },
-                             } },
-                             { $unwind: "$children"}, //Need to re-sort taxon
-                             { $sort: {"children.taxon":1} },
-                             { $group: {
-                                   _id: {
-                                     family: "$_id.family",
-                                     genus: "$_id.genus"
-                                   },
-                                   children: { $push: {
-                                     taxon: "$children.taxon"
-                                   } }
-                             } },
-                             { $sort: {"_id.genus":1} },
-                             { $group: {
-                                   _id:"$_id.family",
-                                   taxon: { $push: {
-                                       genus: "$_id.genus",
-                                       species: "$children.taxon"
-                                   } }
-                             } },
-                             { $project: {family:"$_id", _id:0, taxon:1} },
-                             { $sort: {family:1} }
-                           ]).exec()
-        await reply.send(keyx)
-    })
-
 /* sadcp data looks like
   odb_cruise_id longitude_degree latitude_degree               GMT+8 depth
 1    OR10277            119.9939        21.88746 1991-04-20 19:11:00   150
@@ -285,14 +246,22 @@ str(speed, 8, 3) as "Speed(m/s)"
           limit: { type: 'integer'},
           mean_threshld: { type: 'string'}
       },
+/*    headers: { //S.object().prop('x-ocpu-cache', S.string()),
+        type: 'object',
+        properties: {
+          'x-firefox-spdy': { type: 'string' },
+          'x-ocpu-cache': { type: 'string' }
+        }
+      },*/
       response: {
+        //S.object().prop(
         200: //{
           //type: 'object',
           //properties: { //https://bit.ly/3vVD0Zg : fast-json-stringify doesn't support oneOf as the root object
           //  response: sadcpSchema
           //}
           S.oneOf([sadcpGJsonSchema, sadcpJsonSchema])
-        //}
+        //) //}
       }
     },
 /*
@@ -559,7 +528,7 @@ Order by [GMT+8],longitude_degree,latitude_degree
       //reply.sent = true
       await cached.pipe(reply.raw)
       await reply.code(200)
-      reply.sent = await true
+      await reply.hijack() //deprecated: reply.sent = await true
     /*.on('end', () => {
           fastify.log.info("----Sadcp cache pipe end----")
           reply.sent = true
@@ -735,8 +704,8 @@ Order by [GMT+8],longitude_degree,latitude_degree
         src.on('finish', () => { //'end'
           //res.raw.write(']')
           fastify.log.info("------!!Stream finish!!-------")
-          res.raw.end() //https://stackoverflow.com/questions/70389882/nodejs-stream-returns-incomplete-response
-          res.sent = true
+          res.raw.end()  //https://stackoverflow.com/questions/70389882/nodejs-stream-returns-incomplete-response
+          reply.hijack() //deprecated: res.sent = true
           resolve
         })
         //res.send(src.pipe(stringify()))
