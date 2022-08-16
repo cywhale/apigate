@@ -9,7 +9,7 @@ const apiConf = {
     exposeRoute: true,
     swagger: {
       info: {
-        title: 'ODB Test API',
+        title: 'ODB Open API',
         description: 'APIGATE Manual',
         version: '1.0.0'
       },
@@ -20,11 +20,15 @@ const apiConf = {
       host: 'ecodata.odb.ntu.edu.tw',
       schemes: ['https'],
       consumes: ['application/json'],
-      produces: ['application/json']
+      produces: ['application/json'],
+    /*tags: [
+        { name: 'sadcp', description: 'ODB SADCP API' },
+        { name: 'ctd', description: 'ODB CTD API' }
+      ]*/
     },
     uiConfig: {
       validatorUrl: null,
-      docExpansion: 'full', //'sadcp'
+      docExpansion: 'list', //'full'
       deepLinking: false
     }
 //} //https://github.com/fastify/fastify-swagger/issues/191

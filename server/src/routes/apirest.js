@@ -106,7 +106,7 @@ str(speed, 8, 3) as "Speed(m/s)"
   }
 
 //ref: https://github.com/MatteoDiPaolo/googleTakeoutLocations-to-geoJson
-  const toGeoJsonRow = row => {
+  const toSadcpGeoJsonRow = row => {
     return {
         type: 'Feature',
         geometry: {
@@ -118,12 +118,36 @@ str(speed, 8, 3) as "Speed(m/s)"
         },
         properties: {
             //datetime: row.datetime,
-            time_peorid: row.time_period || null,
-            u: row.u || null,
-            v: row.v || null,
-            depth: row.depth || null
+            time_period: row.time_period, //|| null //but 0 cause null
+            depth: row.depth,
+            u: row.u,
+            v: row.v,
+            count: row.count
             //direction: row.direction || null,
             //speed: row.speed || null
+        }
+    }
+  }
+  
+  const toCtdGeoJsonRow = row => {
+    return {
+        type: 'Feature',
+        geometry: {
+            type: 'Point',
+            coordinates: [
+                row.longitude,
+                row.latitude,
+            ]
+        },
+        properties: {
+            time_period: row.time_period,
+            depth: row.depth,
+            temperature: row.temperature,
+            salinity: row.salinity,
+            fluorescence: row.fluorescence,
+            transmission: row.transmission,
+            oxygen: row.oxygen,
+            count: row.count
         }
     }
   }
@@ -148,13 +172,13 @@ str(speed, 8, 3) as "Speed(m/s)"
 */
   const sadcpJsonSchema = S.object()
     .id('#sadcpjson')
-    .description('ok (in JSON)')
+    .description('SADCP ok (in JSON)')
     .prop('longitude', S.number())
     .prop('latitude', S.number())
     .prop('time_period', S.integer())
+    .prop('depth', S.number())
     .prop('u', S.number())
     .prop('v', S.number())
-    .prop('depth', S.number())
     .prop('direction', S.number())
     .prop('speed', S.number())
     .prop('datetime', S.string())
@@ -174,41 +198,56 @@ str(speed, 8, 3) as "Speed(m/s)"
 
   const sadcpGJsonSchema = S.object()
     .id('#sadcpgjson')
-    .description('ok (in GeoJSON)')
+    .description('SADCP ok (in GeoJSON)')
     .prop('type', S.string())
     .prop('geometry', S.object()
         .prop('type', S.string())
         .prop('coordinates', S.array().minItems(2).items(S.number())))
     .prop('properties', S.object()
         .prop('time_period', S.integer())
-        //.prop('datetime', S.string())
+        .prop('depth', S.number())
         .prop('u', S.number())
         .prop('v', S.number())
-        .prop('depth', S.number())
         //.prop('direction', S.number())
         //.prop('speed', S.number())
+        //.prop('datetime', S.string())
+        .prop('count', S.integer())
        )
-/*{
-    $type: { type: 'string' },
-    geometry: {
-        $type: { type: 'string' },
-        coordinates: { type: 'array' }
-    },
-    properties: {
-        datetime: { type: 'string' },
-        depth: { type: 'number' },
-        u: { type: 'number' },
-        v: { type: 'number' },
-        direction: { type: 'number' },
-        speed: { type: 'number' }
-    }
-  }*/
-/*const sadcpSchema = {
-    oneOf: [
-      { $id: '#sadcpjson', type: 'object', properties: sadcpJsonSchema }, //, required: ['datetime'] },
-      { $id: '#sadcpgjson', type: 'object', properties: sadcpGJsonSchema } //, required: ['topic'] },
-    ]
-  }*/
+
+  const ctdJsonSchema = S.object()
+    .id('#ctdjson')
+    .description('CTD ok (in JSON)')
+    .prop('longitude', S.number())
+    .prop('latitude', S.number())
+    .prop('time_period', S.integer())
+    .prop('depth', S.number())
+    .prop('temperature', S.number())
+    .prop('salinity', S.number())
+    .prop('fluorescence', S.number())
+    .prop('transmission', S.number())
+    .prop('oxygen', S.number())
+    .prop('datetime', S.string())
+    .prop('year', S.integer())
+    .prop('month', S.integer())
+    .prop('count', S.integer())
+
+  const ctdGJsonSchema = S.object()
+    .id('#ctdgjson')
+    .description('CTD ok (in GeoJSON)')
+    .prop('type', S.string())
+    .prop('geometry', S.object()
+        .prop('type', S.string())
+        .prop('coordinates', S.array().minItems(2).items(S.number())))
+    .prop('properties', S.object()
+        .prop('time_period', S.integer())
+        .prop('depth', S.number())
+        .prop('temperature', S.number())
+        .prop('salinity', S.number())
+        .prop('fluorescence', S.number())
+        .prop('transmission', S.number())
+        .prop('oxygen', S.number())
+        .prop('count', S.integer())
+       )
 /*
   const constraint = {
     response: {
@@ -306,10 +345,10 @@ str(speed, 8, 3) as "Speed(m/s)"
       let allspan_avg_flag = 1 // modified 20220720: 2:for all time-span use sadcpavg procedure to fetch pre-calculated table
                                // 1: have time-specific requirement use sadcpgridqry procedure (yyyymm);
                                // 0: only for non gridded raw mode: sadcpqry
-      let qkey = ''
+      let qkey = 'SADCP_'
       if (typeof qstr.start == 'undefined' && typeof qstr.end == 'undefined') {
         allspan_avg_flag = 2
-        qkey = start + '_NA'
+        qkey = qkey + start + '_NA'
         start = `"${start}"`
         end = `"${end}"`
       } else {
@@ -318,7 +357,7 @@ str(speed, 8, 3) as "Speed(m/s)"
             start = qstr.start.substring(0, 4) + '-' + qstr.start.substring(4, 6) + '-' + qstr.start.substring(6)
           }
         }
-        qkey = start
+        qkey = qkey + start
         start = `"${start}"`
 
         if (typeof qstr.end !== 'undefined') {
@@ -475,7 +514,7 @@ str(speed, 8, 3) as "Speed(m/s)"
       qkey = qkey + '_' + mean_threshold.toString() + '_' + lon0.toString() + '_' + lon1.toString() +
              '_' + lat0.toString() + '_' + lat1.toString() + '_' + dep0.toString() + '_' + dep1.toString()
       //fastify.log.info("Query key is: " + qkey)
-      fastify.log.info("Query command is: " + qry)
+      //fastify.log.info("Query command is: " + qry)
 /*
       let qry0= `DECLARE @DT_START DATETIME;
 DECLARE @DT_END DATETIME;
@@ -614,7 +653,7 @@ Order by [GMT+8],longitude_degree,latitude_degree
               predx = `{"type":"FeatureCollection","features": [`
               res.raw.write(predx)
               cacheout.push(predx)
-              data = JSON.stringify(toGeoJsonRow(chunk))
+              data = JSON.stringify(toSadcpGeoJsonRow(chunk))
             } else if (format === 'uvgrid') { //JSON format for GFS: https://github.com/cambecc/grib2json/blob/master/README.md
               predx = `{"header":{"periodMode":${mode},"periodArray":${JSON.stringify(period)},"parameterCategory":11,"parameterNumber":1,"parameterNumberName":"UV-grids","parameterUnit":"m.s-1","refTime":null,"forcastTime":0,"lo1":${bbox[0]},"la1":${bbox[3]},"lo2":${bbox[2]},"la2":${bbox[1]},"nx":${grdnx},"ny":${grdny},"dx":${dx},"dy":${dy}},"data":[`
               res.raw.write(predx)
@@ -645,7 +684,7 @@ Order by [GMT+8],longitude_degree,latitude_degree
             }
           } else {
             if (format === 'geojson') {
-              data =`,${JSON.stringify(toGeoJsonRow(chunk))}`;
+              data =`,${JSON.stringify(toSadcpGeoJsonRow(chunk))}`;
             } else if (format === 'uvgrid') {
               if (chkmissFlag) {
                 stat = grdMissingVal(res, bbox[0], gridx, gridy, chunk.longitude, chunk.latitude, dc, di, dj, dx, dy, grdnx, period)
@@ -682,7 +721,7 @@ Order by [GMT+8],longitude_degree,latitude_degree
           cacheout.push(data)
         })
         src.on('error', () => {
-          fastify.log.info("------!!Stream Error!!-------")
+          fastify.log.info("------!!SADCP Stream Error!!-------")
           //reject
         })
         src.on('end', () => {
@@ -713,11 +752,11 @@ Order by [GMT+8],longitude_degree,latitude_degree
           cacheout.pipe(streamCache.set(qkey)) //.on('error', err => {
           //  fastify.log.info("Set cache error: " + err)
           //})
-          fastify.log.info("------!!Stream End with cache set!! " + qkey)
+          fastify.log.info("------!!SADCP Stream End with cache set!! " + qkey)
         })
         src.on('finish', () => { //'end'
           //res.raw.write(']')
-          fastify.log.info("------!!Stream finish!!-------")
+          fastify.log.info("------!!SADCP Stream finish!!-------")
           res.raw.end()  //https://stackoverflow.com/questions/70389882/nodejs-stream-returns-incomplete-response
           reply.hijack() //deprecated: res.sent = true
           resolve
@@ -743,4 +782,259 @@ Order by [GMT+8],longitude_degree,latitude_degree
     next()
   } } //else cached //added @hqjs/stream-buffer-cache 20220524
   })
+
+/* CTD API START */
+  fastify.route({
+    url: '/ctd',
+    method: ['GET'],
+    schema: {
+      description: 'ODB CTD API',
+      tags: ['ctd'],
+      querystring: {
+        type: "object",
+        properties: {
+          lon0: { type: 'number' },
+          lon1: { type: 'number' },
+          lat0: { type: 'number' },
+          lat1: { type: 'number' },
+          dep0: { type: 'number' },
+          dep1: { type: 'number' },
+          dep_mode: { type: 'string'},
+          mode: { type: 'string'},
+          format: { type: 'string'},
+          xorder: { type: 'integer'},
+          yorder: { type: 'integer'},
+          start: { type: 'string' },
+          end: { type: 'string'},
+          limit: { type: 'integer'},
+          mean_threshld: { type: 'string'}
+        }
+      },
+      response: {
+        200:
+          S.oneOf([ctdJsonSchema, ctdGJsonSchema])
+      }
+    },
+  handler: async (req, reply) => {
+      const qstr = req.query
+      let start='1991-01-01'
+      let end = 'NULL'
+      let allspan_avg_flag = 1
+      let qkey = 'CTD_'
+      if (typeof qstr.start == 'undefined' && typeof qstr.end == 'undefined') {
+        allspan_avg_flag = 2
+        qkey = qkey + start + '_NA'
+        start = `"${start}"`
+        end = `"${end}"`
+      } else {
+        if (typeof qstr.start !== 'undefined') {
+          if (/^\d+\.?\d*$/.test(qstr.start) && qstr.start.length===8) {
+            start = qstr.start.substring(0, 4) + '-' + qstr.start.substring(4, 6) + '-' + qstr.start.substring(6)
+          }
+        }
+        qkey = qkey + start
+        start = `"${start}"`
+
+        if (typeof qstr.end !== 'undefined') {
+          if (/^\d+\.?\d*$/.test(qstr.end) && qstr.end.length===8) {
+            end = qstr.end.substring(0, 4) + '-' + qstr.end.substring(4, 6) + '-' + qstr.end.substring(6)
+            qkey = qkey + '_' + end
+          }
+        }
+        if (Date.parse(start) <= Date.parse('1991-12-31') && (end === 'NULL' ||
+            Date.parse(end) > Date.parse((parseInt(new Date().getFullYear())-1).toString() + '-12-31'))) {
+          allspan_avg_flag = 2
+        }
+        if (end === 'NULL') {
+          qkey = qkey + '_NA'
+        } else {
+          end = `"${end}"`
+        }
+      }
+
+      let limit = 'NULL'
+      if (typeof qstr.limit !== 'undefined') {
+        if (Number.isInteger(Number(qstr.limit)) && Number(qstr.limit) > 0) {
+          limit = parseInt(qstr.limit)
+        }
+      }
+      let dep_mode = 'NULL'
+      if (typeof qstr.dep_mode !== 'undefined') {
+        dep_mode = qstr.dep_mode.toLowerCase()
+        if (dep_mode !== 'range' && dep_mode !== 'mean' && dep_mode !== 'exact') {
+          dep_mode = 'NULL'
+        }
+      }
+
+      let mode = 'NULL'
+      let period = [0]
+      if (typeof qstr.mode !== 'undefined') {
+        mode = qstr.mode.toLowerCase() //'raw', may transfer huge data
+        if (mode === 'monsoon') {
+          period = [17,18]
+        } else if (mode === 'season') {
+          period = [13,14,15,16]
+        } else if (mode === 'month') {
+          period = [1,2,3,4,5,6,7,8,9,10,11,12]
+        } else if (/^raw/.test(mode)) { //(mode === 'raw') {
+          if (limit === 'NULL' || limit >= 1000) { limit = 1000 }
+        } else {
+          if (Number.isInteger(Number(qstr.mode))) {
+            mode = qstr.mode
+            period = [parseInt(mode)]
+          } else {
+            mode = 'default' //default: is year mean
+          }
+        }
+        qkey = qkey + '_' + mode
+        if (mode === 'raw0') {
+          allspan_avg_flag = 0
+          mode = 'raw'
+        } else if (/^raw/.test(mode)) { //i.e. raw or raw1
+          allspan_avg_flag = 1
+          mode = 'raw'
+        }
+      }
+
+      let xorder = 'NULL'
+      if (typeof qstr.xorder !== 'undefined') {
+        if (Number.isInteger(Number(qstr.xorder))) {
+          xorder = parseInt(qstr.xorder)
+        }
+      }
+
+      let yorder = 'NULL'
+      if (typeof qstr.yorder !== 'undefined') {
+        if (Number.isInteger(Number(qstr.yorder))) {
+          yorder = parseInt(qstr.yorder)
+        }
+      }
+
+      let format = (qstr.format??'json').toLowerCase() //'json', 'geojson'
+      qkey = qkey + '_' + format
+
+      if (dep_mode === 'NULL') {
+        qkey = qkey + '_NA'
+      } else {
+        qkey = qkey + '_' + dep_mode
+        dep_mode = `"${dep_mode}"`
+      }
+
+      if (mode === 'NULL') {
+        qkey = qkey + '_' + 'default'
+      } else {
+        qkey = qkey + '_' + mode + '_' + allspan_avg_flag.toString()
+        mode = `"${mode}"`
+      }
+
+      let mean_threshold = qstr.mean_threshold??-1
+      let lon0 = qstr.lon0??105
+      let lon1 = qstr.lon1??135
+      let lat0 = qstr.lat0??2
+      let lat1 = qstr.lat1??35
+      let dep0 = qstr.dep0??-1
+      let dep1 = qstr.dep1??-1
+      let qry = `USE [${fastify.config.SQLDBNAME}];
+                 EXEC [dbo].`
+      if (allspan_avg_flag==2) {
+        qry= qry + `[ctdavg] @lon0=${lon0}, @lon1=${lon1}, @lat0=${lat0}, @lat1=${lat1}, @dep0=${dep0}, @dep1=${dep1}, @dep_mode=${dep_mode}, ` +
+                   `@mode=${mode}, @xorder=${xorder}, @yorder=${yorder}, @limit=${limit}, @mean_threshold=${mean_threshold};`
+      } else if (allspan_avg_flag==1) {
+        qry= qry + `[ctdgridqry] @lon0=${lon0}, @lon1=${lon1}, @lat0=${lat0}, @lat1=${lat1}, @dep0=${dep0}, @dep1=${dep1}, @dep_mode=${dep_mode}, ` +
+                   `@mode=${mode}, @xorder=${xorder}, @yorder=${yorder}, @start=${start}, @end=${end}, @limit=${limit}, @mean_threshold=${mean_threshold};`
+      } else {
+        qry= qry + `[ctdqry] @lon0=${lon0}, @lon1=${lon1}, @lat0=${lat0}, @lat1=${lat1}, @dep0=${dep0}, @dep1=${dep1}, @dep_mode=${dep_mode}, ` +
+                   `@mode=${mode}, @xorder=${xorder}, @yorder=${yorder}, @start=${start}, @end=${end}, @limit=${limit}, @mean_threshold=${mean_threshold};`
+      }
+
+      if (limit === 'NULL') {
+        qkey = qkey + '_' + 'NA'
+      } else {
+        qkey = qkey + '_' + limit.toString()
+      }
+      if (xorder === 'NULL') {
+        qkey = qkey + '_' + 'NA'
+      } else {
+        qkey = qkey + '_' + xorder.toString()
+      }
+      if (yorder === 'NULL') {
+        qkey = qkey + '_' + 'NA'
+      } else {
+        qkey = qkey + '_' + yorder.toString()
+      }
+      qkey = qkey + '_' + mean_threshold.toString() + '_' + lon0.toString() + '_' + lon1.toString() +
+             '_' + lat0.toString() + '_' + lat1.toString() + '_' + dep0.toString() + '_' + dep1.toString()
+      //fastify.log.info("CTD Query key is: " + qkey)
+      //fastify.log.info("CTD Query command is: " + qry)
+
+    reply.type('application/json')
+    const cached = streamCache.get(qkey)
+    if (cached) {
+      fastify.log.info("CTD Cached Hit!! " + qkey)
+      await cached.pipe(reply.raw)
+      await reply.code(200)
+      await reply.hijack()
+      next()
+    } else {
+    //fastify.log.info("!!CTD Cached Miss: " + qkey)
+    var count = 0
+    const cacheout = new Readable({ objectMode: true })
+    var predx = ''
+    const pipex = (src, res) => {
+      return new Promise((resolve, reject) => {
+        src.on('data', chunk => {
+          let data
+          if (count === 0) {
+            if (format === 'geojson') {
+              predx = `{"type":"FeatureCollection","features": [`
+              res.raw.write(predx)
+              cacheout.push(predx)
+              data = JSON.stringify(toCtdGeoJsonRow(chunk))
+            } else {
+              res.raw.write(`[`)
+              cacheout.push(`[`)
+              data = JSON.stringify(chunk)
+            }
+          } else {
+            if (format === 'geojson') {
+              data =`,${JSON.stringify(toCtdGeoJsonRow(chunk))}`;
+            } else {
+              data =`,${JSON.stringify(chunk)}`;
+            }
+          }
+          count++
+          res.raw.write(data) //fastJson(sadcpSchema)(data)))
+          cacheout.push(data)
+        })
+        src.on('error', () => {
+          fastify.log.info("------!!CTD Stream Error!!-------")
+        })
+        src.on('end', () => {
+          if (format === 'geojson') {
+            res.raw.write(`]}`)
+            cacheout.push(`]}`)
+          } else {
+            res.raw.write(`]`)
+            cacheout.push(`]`)
+          }
+          cacheout.push(null)
+          cacheout.pipe(streamCache.set(qkey)) //.on('error', err => {
+          fastify.log.info("------!!CTD Stream End with cache set!! " + qkey)
+        })
+        src.on('finish', () => {
+          fastify.log.info("------!!CTD Stream finish!!-------")
+          res.raw.end()
+          reply.hijack()
+          resolve
+        })
+      })
+    }
+
+    const stream = sqldb.raw(qry).stream({ objectMode: true })
+    stream._read = ()=>{}
+    await pipex(stream, reply)
+    next()
+  } }
+  })
+/* CTD API END*/
 }
