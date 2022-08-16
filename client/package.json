@@ -52,9 +52,9 @@
     "zlib": "^1.0.5"
   },
   "dependencies": {
-    "firebase": "9.9.1",
+    "firebase": "9.9.2",
     "nanoid": "4.0.0",
-    "preact": "10.10.0",
+    "preact": "10.10.1",
     "preact-router": "4.0.1",
     "react-dropdown-tree-select": "2.7.1",
     "universal-cookie": "^4.0.4"

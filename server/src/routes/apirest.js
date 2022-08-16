@@ -148,6 +148,7 @@ str(speed, 8, 3) as "Speed(m/s)"
 */
   const sadcpJsonSchema = S.object()
     .id('#sadcpjson')
+    .description('ok (in JSON)')
     .prop('longitude', S.number())
     .prop('latitude', S.number())
     .prop('time_period', S.integer())
@@ -173,6 +174,7 @@ str(speed, 8, 3) as "Speed(m/s)"
 
   const sadcpGJsonSchema = S.object()
     .id('#sadcpgjson')
+    .description('ok (in GeoJSON)')
     .prop('type', S.string())
     .prop('geometry', S.object()
         .prop('type', S.string())
@@ -230,6 +232,8 @@ str(speed, 8, 3) as "Speed(m/s)"
       description: 'ODB SADCP API',
       tags: ['sadcp'],
       querystring: {
+        type: "object",
+        properties: {
           lon0: { type: 'number' },
           lon1: { type: 'number' },
           lat0: { type: 'number' },
@@ -245,6 +249,7 @@ str(speed, 8, 3) as "Speed(m/s)"
           end: { type: 'string'},
           limit: { type: 'integer'},
           mean_threshld: { type: 'string'}
+        }
       },
 /*    headers: { //S.object().prop('x-ocpu-cache', S.string()),
         type: 'object',
@@ -260,7 +265,7 @@ str(speed, 8, 3) as "Speed(m/s)"
           //properties: { //https://bit.ly/3vVD0Zg : fast-json-stringify doesn't support oneOf as the root object
           //  response: sadcpSchema
           //}
-          S.oneOf([sadcpGJsonSchema, sadcpJsonSchema])
+          S.oneOf([sadcpJsonSchema, sadcpGJsonSchema])
         //) //}
       }
     },
@@ -349,16 +354,10 @@ str(speed, 8, 3) as "Speed(m/s)"
           dep_mode = 'NULL'
         }
       }
-      if (dep_mode === 'NULL') {
-        qkey = qkey + '_NA'
-      } else {
-        qkey = qkey + '_' + dep_mode
-        dep_mode = `"${dep_mode}"`
-      }
       /*let mean = true //20220518 modified stored procedure in SQL SERVER that parameter 'mean' is replaced by mode
         let mode = (qstr.mode??'average').toLowerCase() //'raw', may transfer huge data
         if (mode === 'raw' ) { mean = false } */
-      // 202207: add raw0: means real raw data; raw1: gridded raw data but all limit 10000
+      // 202207: add raw0: means real raw data; raw1: gridded raw data but all limit 1000
       let mode = 'NULL'
       let period = [0]
       if (typeof qstr.mode !== 'undefined') {
@@ -370,9 +369,15 @@ str(speed, 8, 3) as "Speed(m/s)"
         } else if (mode === 'month') {
           period = [1,2,3,4,5,6,7,8,9,10,11,12]
         } else if (/^raw/.test(mode)) { //(mode === 'raw') {
-          if (limit === 'NULL' || limit >= 10000) { limit = 10000 }
+          if (limit === 'NULL' || limit >= 1000) { limit = 1000 }
         } else {
-          mode = 'default' //default: is year mean
+          if (Number.isInteger(Number(qstr.mode))) {
+            //fastify.log.info("Mode is integer!" + qstr.mode)
+            mode = qstr.mode
+            period = [parseInt(mode)]
+          } else {
+            mode = 'default' //default: is year mean
+          }
         }
         qkey = qkey + '_' + mode
         if (mode === 'raw0') {
@@ -382,9 +387,7 @@ str(speed, 8, 3) as "Speed(m/s)"
           allspan_avg_flag = 1
           mode = 'raw'
         }
-        mode = `"${mode}"`
       }
-      if (mode === 'NULL') { qkey = qkey + '_' + 'default' }
 
       let xorder = 'NULL'
       if (typeof qstr.xorder !== 'undefined') {
@@ -400,11 +403,11 @@ str(speed, 8, 3) as "Speed(m/s)"
         }
       }
 
-      let format = (qstr.format??'geojson').toLowerCase() //'json', 'geojson', 'uvgrid'
+      let format = (qstr.format??'json').toLowerCase() //'json', 'geojson', 'uvgrid'
       if (format === 'uvgrid') {
         if (/raw/.test(mode)) {
           mode = 'NULL';
-          allspan_avg_flag = 1 //cannot be raw in uvgrid format
+          if (allspan_avg_flag === 0) { allspan_avg_flag = 1 } //cannot be raw in uvgrid format
         }
         if (dep_mode === 'NULL' || /range/.test(dep_mode)) {
           dep_mode = 'mean';  //cannot be multiple values for depth in uvgrid format
@@ -416,9 +419,20 @@ str(speed, 8, 3) as "Speed(m/s)"
       }
       qkey = qkey + '_' + format
 
-      if (mode === 'raw') {
-        allspan_avg_flag = false
+      if (dep_mode === 'NULL') {
+        qkey = qkey + '_NA'
+      } else {
+        qkey = qkey + '_' + dep_mode
+        dep_mode = `"${dep_mode}"`
       }
+
+      if (mode === 'NULL') {
+        qkey = qkey + '_' + 'default'
+      } else {
+        qkey = qkey + '_' + mode + '_' + allspan_avg_flag.toString()
+        mode = `"${mode}"`
+      }
+
       let mean_threshold = qstr.mean_threshold??-1
       let lon0 = qstr.lon0??105
       let lon1 = qstr.lon1??135
@@ -431,11 +445,11 @@ str(speed, 8, 3) as "Speed(m/s)"
       let qry = `USE [${fastify.config.SQLDBNAME}];
                  EXEC [dbo].`
       if (allspan_avg_flag==2) {
-        fastify.log.info("Note: Only query stored mean-field table by sadcpavg procedure!")
+        //fastify.log.info("Note: Only query stored mean-field table by sadcpavg procedure!")
         qry= qry + `[sadcpavg] @lon0=${lon0}, @lon1=${lon1}, @lat0=${lat0}, @lat1=${lat1}, @dep0=${dep0}, @dep1=${dep1}, @dep_mode=${dep_mode}, ` +
                    `@mode=${mode}, @xorder=${xorder}, @yorder=${yorder}, @limit=${limit}, @mean_threshold=${mean_threshold};`
       } else if (allspan_avg_flag==1) {
-        fastify.log.info("Note: Only query stored mean-field table by sadcpgridqry procedure!")
+        //fastify.log.info("Note: Only query stored mean-field table by sadcpgridqry procedure!")
         qry= qry + `[sadcpgridqry] @lon0=${lon0}, @lon1=${lon1}, @lat0=${lat0}, @lat1=${lat1}, @dep0=${dep0}, @dep1=${dep1}, @dep_mode=${dep_mode}, ` +
                    `@mode=${mode}, @xorder=${xorder}, @yorder=${yorder}, @start=${start}, @end=${end}, @limit=${limit}, @mean_threshold=${mean_threshold};`
       } else {
@@ -460,7 +474,7 @@ str(speed, 8, 3) as "Speed(m/s)"
       }
       qkey = qkey + '_' + mean_threshold.toString() + '_' + lon0.toString() + '_' + lon1.toString() +
              '_' + lat0.toString() + '_' + lat1.toString() + '_' + dep0.toString() + '_' + dep1.toString()
-      fastify.log.info("Query key is: " + qkey)
+      //fastify.log.info("Query key is: " + qkey)
       fastify.log.info("Query command is: " + qry)
 /*
       let qry0= `DECLARE @DT_START DATETIME;
@@ -535,7 +549,7 @@ Order by [GMT+8],longitude_degree,latitude_degree
       })*/
       next()
     } else {
-    fastify.log.info("!!Sadcp Cached Miss: " + qkey)
+    //fastify.log.info("!!Sadcp Cached Miss: " + qkey)
     var count = 0
     let bbox = [grd15moa(lon0), grd15moa(lat0), grd15moa(lon1), grd15moa(lat1)]
     let grdnx= parseInt((bbox[2]-bbox[0])/0.25) + 1

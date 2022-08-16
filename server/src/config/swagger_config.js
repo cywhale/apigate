@@ -22,7 +22,11 @@ const apiConf = {
       consumes: ['application/json'],
       produces: ['application/json']
     },
-    uiConfig: { validatorUrl: null }
+    uiConfig: {
+      validatorUrl: null,
+      docExpansion: 'full', //'sadcp'
+      deepLinking: false
+    }
 //} //https://github.com/fastify/fastify-swagger/issues/191
 }
 export default apiConf

@@ -170,12 +170,25 @@ export default async function (fastify, opts, next) {
     //}
   }) */
 
-  fastify.register(Cors, {
-    credentials: true,
-    //preflight: false,
-    allowedHeaders: ["Origin, X-Requested-With, Content-Type, Accept"],
-    //origin: false
-    origin: ["https://eco.odb.ntu.edu.tw","https://ecodata.odb.ntu.edu.tw","https://bio.odb.ntu.edu.tw"]
+  fastify.register(Cors, (instance) => {
+    return (req, callback) => {
+      const corsOptions = {
+        origin: true,
+        credentials: true,
+        preflight: true,
+        preflightContinue: true,
+        methods: ['GET', 'POST', 'OPTIONS'],
+        allowedHeaders: ['Origin', 'X-Requested-With', 'Content-Type', 'Accept', 'Keep-Alive', 'User-Agent',
+                         'Cache-Control', 'Authorization', 'DNT', 'X-PINGOTHER', 'Range'],
+        exposedHeaders: ['Content-Range'],
+        maxAge: 86400,
+      };
+      // do not include CORS headers for requests from localhost
+      if (/^localhost$/m.test(req.headers.origin)) {
+        corsOptions.origin = false
+      }
+      callback(null, corsOptions)
+    }
   })
 
   fastify.register(AutoLoad, {

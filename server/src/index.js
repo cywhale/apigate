@@ -10,7 +10,7 @@ import apiConf from './config/swagger_config.js'
 
 const configSecServ = async (certDir='config') => {
   const readCertFile = (filename) => {
-    return readFileSync(join(import.meta.url, certDir, filename)) //fs.readFileSync(path.join(__dirname, certDir, filename));
+    return readFileSync(join(import.meta.url, certDir, filename))
   };
   try {
     const [key, cert] = await Promise.all(
@@ -30,17 +30,20 @@ const startServer = async () => {
       trustProxy: true,
       https: {key, cert, allowHTTP1},
       requestTimeout: 5000,
-      logger: true
+      logger: true,
+      ajv: { //https://github.com/fastify/fastify/issues/2841
+        customOptions: {
+          coerceTypes: 'array'
+        }
+      }
   })
 
   fastify.register(Env, {
-    //confKey: 'config',
     dotenv: {
       path: join(import.meta.url, 'config/.env'),
     //debug: true
     },
     schema: S.object()
-      //.prop('NODE_ENV', S.string().required())
       .prop('COOKIE_SECRET', S.string().required())
       .prop('MONGO_CONNECT', S.string().required())
       .prop('SQLSERVER', S.string().required())
