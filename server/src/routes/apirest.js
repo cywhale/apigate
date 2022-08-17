@@ -31,7 +31,7 @@ str(direction,6,1)as "Direction(deg.)",
 str(speed, 8, 3) as "Speed(m/s)"
 */
 //ref: https://stackoverflow.com/questions/52987837/nodejs-unable-to-import-sequelize-js-model-es6
-
+  const limited_yrs = 3 //for CTD, SADCP, cannot reveal last 3 yrs data
   const grd15moa = deg => { return(parseInt((deg-0.125) / 0.25) * 0.25 + 0.25) } //gridded to 0.25-degree = 15 minute of arc
 
   const grdMissingVal = (res, xmin, grdx, grdy, curx, cury, gcnt, gi, gj, ix, iy, nx, tp) => {
@@ -128,7 +128,7 @@ str(speed, 8, 3) as "Speed(m/s)"
         }
     }
   }
-  
+
   const toCtdGeoJsonRow = row => {
     return {
         type: 'Feature',
@@ -264,6 +264,417 @@ str(speed, 8, 3) as "Speed(m/s)"
   }
   fastify.register(import('../config/sadcpSchemaMdl.js'), constraint)
 */
+  const queryPipe = async (req, reply, keyx='sadcp') => {
+      const qstr = req.query
+      let start='1991-01-01'
+      let end = 'NULL' //'' before modifed query to stored procedure in mssql 20220505
+      let startd = Date.parse(start)
+      let endd = Date.parse((new Date().getUTCFullYear()-limited_yrs).toString()+"-01-01")
+      let allspan_avg_flag = 1 // modified 20220720: 2:for all time-span use sadcpavg procedure to fetch pre-calculated table
+                               // 1: have time-specific requirement use sadcpgridqry procedure (yyyymm);
+                               // 0: only for non gridded raw mode: sadcpqry
+      let qkey = keyx==='sadcp'? 'SADCP_' : 'CTD_'
+      if (typeof qstr.start == 'undefined' && typeof qstr.end == 'undefined') {
+        allspan_avg_flag = 2
+        qkey = qkey + start + '_NA'
+        start = `"${start}"`
+        end = `"${end}"`
+      } else {
+        if (typeof qstr.start !== 'undefined') {
+          if (/^\d+\.?\d*$/.test(qstr.start) && qstr.start.length===8) {
+            start = qstr.start.substring(0, 4) + '-' + qstr.start.substring(4, 6) + '-' + qstr.start.substring(6)
+            if (isNaN(Date.parse(start))) {
+              fastify.log.info("Warning: Wrong start date format: " + start)
+              start='1991-01-01'
+            } else {
+              startd = Date.parse(start)
+            }
+          }
+        }
+        qkey = qkey + start
+        start = `"${start}"`
+
+        if (typeof qstr.end !== 'undefined') {
+          if (/^\d+\.?\d*$/.test(qstr.end) && qstr.end.length===8) {
+            end = qstr.end.substring(0, 4) + '-' + qstr.end.substring(4, 6) + '-' + qstr.end.substring(6)
+            if (isNaN(Date.parse(end))) {
+              fastify.log.info("Warning: Wrong end date format: " + end)
+              end='NULL'
+            } else {
+              if (Date.parse(end) >= endd) {
+                fastify.log.info("Warning: End date exceed limited last 3-years: " + end)
+                end = (new Date().getUTCFullYear()-limited_yrs-1).toString()+"-12-31"
+              } else {
+                endd = Date.parse(end)
+              }
+            }
+          }
+        }
+      }
+      if (!(/^raw/.test(qstr.mode)) && startd <= Date.parse('1991-12-31') && (end === 'NULL' ||
+          endd === Date.parse((new Date().getUTCFullYear()-limited_yrs-1).toString()+"-12-31"))) {
+        fastify.log.info("Warning: Use full-span date: " + start + "-" + end)
+        allspan_avg_flag = 2
+      }
+
+      if (end === 'NULL') {
+        qkey = qkey + '_NA'
+      } else {
+        qkey = qkey + '_' + end
+        end = `"${end}"`
+      }
+
+      let limit = 'NULL'
+      if (typeof qstr.limit !== 'undefined') {
+        if (Number.isInteger(Number(qstr.limit)) && Number(qstr.limit) > 0) {
+          limit = parseInt(qstr.limit)
+          //qkey = qkey + '_' + limit.toString() //determined later
+        }
+      }
+      //fastify.log.info("url: " + req.url)
+      // 202207: addd dep_mode for depth ('range', 'mean', 'exact': use only dep0)
+      let dep_mode = 'NULL'
+      if (typeof qstr.dep_mode !== 'undefined') {
+        dep_mode = qstr.dep_mode.toLowerCase()
+        if (dep_mode !== 'range' && dep_mode !== 'mean' && dep_mode !== 'exact') {
+          dep_mode = 'NULL'
+        }
+      }
+      /*let mean = true //20220518 modified stored procedure in SQL SERVER that parameter 'mean' is replaced by mode
+        let mode = (qstr.mode??'average').toLowerCase() //'raw', may transfer huge data
+        if (mode === 'raw' ) { mean = false } */
+      // 202207: add raw0: means real raw data; raw1: gridded raw data but all limit 1000
+      let mode = 'NULL'
+      let period = [0]
+      if (typeof qstr.mode !== 'undefined') {
+        mode = qstr.mode.toLowerCase() //'raw', may transfer huge data
+        if (mode === 'monsoon') {
+          period = [17,18]
+        } else if (mode === 'season') {
+          period = [13,14,15,16]
+        } else if (mode === 'month') {
+          period = [1,2,3,4,5,6,7,8,9,10,11,12]
+        } else if (/^raw/.test(mode)) { //(mode === 'raw') {
+          if (limit === 'NULL' || limit >= 1000) { limit = 1000 }
+        } else {
+          if (Number.isInteger(Number(qstr.mode))) {
+            //fastify.log.info("Mode is integer!" + qstr.mode)
+            mode = qstr.mode
+            period = [parseInt(mode)]
+          } else {
+            mode = 'default' //default: is year mean
+          }
+        }
+        qkey = qkey + '_' + mode
+        if (mode === 'raw0') {
+          allspan_avg_flag = 0
+          mode = 'raw'
+        } else if (/^raw/.test(mode)) { //i.e. raw or raw1
+          allspan_avg_flag = 1
+          mode = 'raw'
+        }
+      }
+
+      let xorder = 'NULL'
+      if (typeof qstr.xorder !== 'undefined') {
+        if (Number.isInteger(Number(qstr.xorder))) {
+          xorder = parseInt(qstr.xorder)
+        }
+      }
+
+      let yorder = 'NULL'
+      if (typeof qstr.yorder !== 'undefined') {
+        if (Number.isInteger(Number(qstr.yorder))) {
+          yorder = parseInt(qstr.yorder)
+        }
+      }
+
+      let format = (qstr.format??'json').toLowerCase() //'json', 'geojson', 'uvgrid'
+      if (keyx === 'sadcp') { //only SADCP has uvgrid mode
+        if (format === 'uvgrid') {
+          if (/raw/.test(mode)) {
+            mode = 'NULL';
+            if (allspan_avg_flag === 0) { allspan_avg_flag = 1 } //cannot be raw in uvgrid format
+          }
+          if (dep_mode === 'NULL' || /range/.test(dep_mode)) {
+            dep_mode = 'mean';  //cannot be multiple values for depth in uvgrid format
+          }
+          limit = 'NULL'
+          yorder = -2 //must DESC, and ordered by lat, lon
+          xorder = 1  //must increasing
+          //fastify.log.info("Test UVgrid mode: " + mode + " with period: " + JSON.stringify(period))
+        }
+      }
+      qkey = qkey + '_' + format
+
+      if (dep_mode === 'NULL') {
+        qkey = qkey + '_NA'
+      } else {
+        qkey = qkey + '_' + dep_mode
+        dep_mode = `"${dep_mode}"`
+      }
+
+      if (mode === 'NULL') {
+        qkey = qkey + '_' + 'default'
+      } else {
+        qkey = qkey + '_' + mode + '_' + allspan_avg_flag.toString()
+        mode = `"${mode}"`
+      }
+
+      let mean_threshold = qstr.mean_threshold??-1
+      let lon0 = qstr.lon0??105
+      let lon1 = qstr.lon1??135
+      let lat0 = qstr.lat0??2
+      let lat1 = qstr.lat1??35
+      let dep0 = qstr.dep0??-1
+      let dep1 = qstr.dep1??-1
+      //let std = (qstr.std??'').toLowerCase() //'woa13': `dbo.NODC_Standard_depths_woa13 group by depth`
+      //let output = (qstr.output??'').toLowerCase()    //'file', file output (not yet)
+      let qry = `USE [${fastify.config.SQLDBNAME}];
+                 EXEC [dbo].`
+      if (allspan_avg_flag==2) {
+        //fastify.log.info("Note: Only query stored mean-field table by sadcpavg procedure!")
+        qry= qry + `[${keyx}avg] @lon0=${lon0}, @lon1=${lon1}, @lat0=${lat0}, @lat1=${lat1}, @dep0=${dep0}, @dep1=${dep1}, @dep_mode=${dep_mode}, ` +
+                   `@mode=${mode}, @xorder=${xorder}, @yorder=${yorder}, @limit=${limit}, @mean_threshold=${mean_threshold};`
+      } else if (allspan_avg_flag==1) {
+        //fastify.log.info("Note: Only query stored mean-field table by sadcpgridqry procedure!")
+        qry= qry + `[${keyx}gridqry] @lon0=${lon0}, @lon1=${lon1}, @lat0=${lat0}, @lat1=${lat1}, @dep0=${dep0}, @dep1=${dep1}, @dep_mode=${dep_mode}, ` +
+                   `@mode=${mode}, @xorder=${xorder}, @yorder=${yorder}, @start=${start}, @end=${end}, @limit=${limit}, @mean_threshold=${mean_threshold};`
+      } else {
+        qry= qry + `[${keyx}qry] @lon0=${lon0}, @lon1=${lon1}, @lat0=${lat0}, @lat1=${lat1}, @dep0=${dep0}, @dep1=${dep1}, @dep_mode=${dep_mode}, ` +
+                   `@mode=${mode}, @xorder=${xorder}, @yorder=${yorder}, @start=${start}, @end=${end}, @limit=${limit}, @mean_threshold=${mean_threshold};`
+      }
+      //let qkey=`${lon0}_${lon1}_${lat0}_${lat1}_${start}_${end}_${limit}_${mode}_${mean_threshold}_${xorder}_${yorder}`
+      if (limit === 'NULL') {
+        qkey = qkey + '_' + 'NA'
+      } else {
+        qkey = qkey + '_' + limit.toString()
+      }
+      if (xorder === 'NULL') {
+        qkey = qkey + '_' + 'NA'
+      } else {
+        qkey = qkey + '_' + xorder.toString()
+      }
+      if (yorder === 'NULL') {
+        qkey = qkey + '_' + 'NA'
+      } else {
+        qkey = qkey + '_' + yorder.toString()
+      }
+      qkey = qkey + '_' + mean_threshold.toString() + '_' + lon0.toString() + '_' + lon1.toString() +
+             '_' + lat0.toString() + '_' + lat1.toString() + '_' + dep0.toString() + '_' + dep1.toString()
+    //fastify.log.info(keyx + "Query key is: " + qkey)
+    //fastify.log.info(keyx + "Query command is: " + qry)
+/*    return({qry: qry,
+              qkey: qkey,
+              format: format,
+              lon0: lon0,
+              lon1: lon1,
+              lat0: lat0,
+              lat1: lat1}) */
+//  ============================== NODE Stream pipe ======================== //
+    reply.type('application/json')
+    const toGeoJsonRow = keyx === 'sadcp'? toSadcpGeoJsonRow : toCtdGeoJsonRow
+    const cached = streamCache.get(qkey)
+    if (cached) {
+      fastify.log.info(keyx + " Cached Hit!! " + qkey)
+      //reply.code(200)
+      //reply.sent = true
+      await cached.pipe(reply.raw)
+      await reply.code(200)
+      await reply.hijack() //deprecated: reply.sent = await true
+    /*.on('end', () => {
+          fastify.log.info("----Cache pipe end----")
+          reply.sent = true
+      })*/
+      next()
+    } else {
+    //fastify.log.info(keyx + "!! Cached Miss: " + qkey)
+    var count = 0
+    let bbox = [grd15moa(lon0), grd15moa(lat0), grd15moa(lon1), grd15moa(lat1)]
+    let grdnx= parseInt((bbox[2]-bbox[0])/0.25) + 1
+    let grdny= parseInt((bbox[3]-bbox[1])/0.25) + 1
+    let dx = 0.25
+    let dy = 0.25
+    //if (format==="uvgrid") {fastify.log.info("UV-grids format wit bbox: " + bbox + " and grid number: " + grdnx)}
+    var dc = 0 //total counter: dc = di * dj //some grids are missing value, need fill null
+    var di = 0 //x-grid counter
+    var dj = 0 //y-grid counter
+    var dp = 0 //time-period counter
+    var gridx = bbox[0]
+    var gridy = bbox[3] // note that latitude is decreasing in uvgrid format
+    var chkmissFlag = true
+    //var cacheout = [] //new PassThrough()
+    const cacheout = new Readable({ objectMode: true })
+    var predx = ''
+    const pipex = (src, res) => { //, opts = {end: false})
+      return new Promise((resolve, reject) => {
+      /*src //it works
+        .pipe(stringify())
+        .pipe(res.raw) //, {end: false})*/
+      /*src
+        .pipe(zlib.createGunzip())
+        .pipe(parser())
+        .pipe(new streamArray()) */
+        src.on('data', chunk => {
+          let data
+          let stat = {"gap":0}
+
+          if (keyx === 'sadcp' && format === 'uvgrid') {
+            if (count > 0 && (chunk.longitude !== gridx || chunk.latitude !== gridy)) {
+              dp = 0 //dp is the counter of time-period, i.e if mode=='season', period is [13,14,15,16], dp is 0-1-2-3
+              if (di >= grdnx) { //within the same dp, the counter (di, dj) are disabled to keep in the same gridx, gridy
+                di = 0
+                dj = dj + 1
+                gridx = bbox[0]
+                gridy = gridy - dy
+              } else {
+                di = di + 1
+                gridx = gridx + dx
+              }
+              dc = dc + 1
+              //fastify.log.info("Now compare (i,j): (" + di + ", " + dj + ") for grid: " + gridx + ", " + gridy + " with chunk: " + chunk.longitude + ", " + chunk.latitude)
+              if (chunk.longitude === gridx && chunk.latitude === gridy) {
+                chkmissFlag = false
+              } else {
+                chkmissFlag = true
+              }
+            } else if (chunk.longitude === gridx && chunk.latitude === gridy) {
+              if (dp >= period.length) {
+                fastify.log.info("Warning: time-period counter error: " + dp + " with period: " + period.length + " at n-th data: " + count)
+              }
+              chkmissFlag = false //if within the same dp, no need to check missing value on that grid
+            } else {
+              chkmissFlag = true
+            }
+          }
+
+          if (count === 0) {
+            if (format === 'geojson') {
+              predx = `{"type":"FeatureCollection","features": [`
+              res.raw.write(predx)
+              cacheout.push(predx)
+              data = JSON.stringify(toGeoJsonRow(chunk))
+            } else if (keyx === 'sadcp' && format === 'uvgrid') { //JSON format for GFS: https://github.com/cambecc/grib2json/blob/master/README.md
+              predx = `{"header":{"periodMode":${mode},"periodArray":${JSON.stringify(period)},"parameterCategory":11,"parameterNumber":1,"parameterNumberName":"UV-grids","parameterUnit":"m.s-1","refTime":null,"forcastTime":0,"lo1":${bbox[0]},"la1":${bbox[3]},"lo2":${bbox[2]},"la2":${bbox[1]},"nx":${grdnx},"ny":${grdny},"dx":${dx},"dy":${dy}},"data":[`
+              res.raw.write(predx)
+              cacheout.push(predx)
+              //if (chkmissFlag) { //count == 0 always check
+              stat = grdMissingVal(res, bbox[0], gridx, gridy, chunk.longitude, chunk.latitude, dc, di, dj, dx, dy, grdnx, period)
+              //}
+              if (stat.gap > 0) {
+                //if (dp === 0) { // means at start of period //here dp must 0
+                for(let i=0;i<stat.out.length;i++) {cacheout.push(stat.out[i])} //cacheout.push(...stat.out) //when using array
+                data =`,{"${chunk.time_period}":${JSON.stringify({u:chunk.u,v:chunk.v})}`
+                di = stat.di
+                dj = stat.dj
+                dc = dc + stat.gap
+                gridx = stat.cx
+                gridy = stat.cy
+              } else {
+                data =`{"${chunk.time_period}":${JSON.stringify({u:chunk.u,v:chunk.v})}`
+              /*di = di + 1
+                dc = dc + 1
+                gridx = gridx + dx*/
+              }
+              dp = dp + 1
+            } else {
+              res.raw.write(`[`)
+              cacheout.push(`[`)
+              data = JSON.stringify(chunk)
+            }
+          } else {
+            if (format === 'geojson') {
+              data =`,${JSON.stringify(toGeoJsonRow(chunk))}`;
+            } else if (keyx === 'sadcp' && format === 'uvgrid') {
+              if (chkmissFlag) {
+                stat = grdMissingVal(res, bbox[0], gridx, gridy, chunk.longitude, chunk.latitude, dc, di, dj, dx, dy, grdnx, period)
+              }
+              if (stat.gap > 0) {
+                for(let i=0;i<stat.out.length;i++) {cacheout.push(stat.out[i])} //cacheout.push(...stat.out) //when using array
+                data =`,{"${chunk.time_period}":${JSON.stringify({u:chunk.u,v:chunk.v})}`
+                di = stat.di
+                dj = stat.dj
+                dc = dc + stat.gap
+                gridx = stat.cx
+                gridy = stat.cy
+              } else {
+                if (dp === 0) {
+                  data =`},{"${chunk.time_period}":${JSON.stringify({u:chunk.u,v:chunk.v})}`
+                } else {
+                  data =`,"${chunk.time_period}":${JSON.stringify({u:chunk.u,v:chunk.v})}`
+                }
+               /*di = di + 1
+                dc = dc + 1
+                gridx = gridx + dx*/
+              }
+              dp = dp + 1
+            } else {
+              data =`,${JSON.stringify(chunk)}`;
+            }
+          }
+          count++
+        /*if (count % 999 === 0) { //debug
+            fastify.log.info("--!!Count: " + count)
+            fastify.log.info("------!!Data: " + data)
+          }*/
+          res.raw.write(data) //fastJson(sadcpSchema)(data)))
+          cacheout.push(data)
+        })
+        src.on('error', () => {
+          fastify.log.info("------!!Stream Error!!-------")
+          //reject
+        })
+        src.on('end', () => {
+          if (format === 'geojson') {
+            res.raw.write(`]}`)
+            cacheout.push(`]}`)
+          } else if (keyx === 'sadcp' && format === 'uvgrid') {
+            res.raw.write(`}]}`)
+            cacheout.push(`}]}`)
+          } else {
+            res.raw.write(`]`)
+            cacheout.push(`]`)
+          } //'end' event will before 'finish'
+          cacheout.push(null)
+        //fastify.log.info("Now Set cache with data length: " + cacheout.length)
+        /*const cachers = new Readable({
+            objectMode: true,
+            //encoding: 'utf8',
+            read() {
+              const item = cacheout.shift()
+              if (!item) {
+                this.push(null)
+                return
+              }
+              this.push(item)
+            }
+          }) */
+          cacheout.pipe(streamCache.set(qkey)) //.on('error', err => {
+          //  fastify.log.info("Set cache error: " + err)
+          //})
+          fastify.log.info("------!!Stream End with cache set!! " + qkey)
+        })
+        src.on('finish', () => { //'end'
+          //res.raw.write(']')
+          fastify.log.info("------!!Stream finish!!-------")
+          res.raw.end()  //https://stackoverflow.com/questions/70389882/nodejs-stream-returns-incomplete-response
+          reply.hijack() //deprecated: res.sent = true
+          resolve
+        })
+        //res.send(src.pipe(stringify()))
+      })
+    } // end of pipex
+
+    const stream = sqldb //.raw(qry0 + qry1 + qry2).stream()
+                     .raw(qry).stream({ objectMode: true })
+    stream._read = ()=>{}
+    //reply.header('Content-Type', 'application/stream+json')
+    //reply.type('application/json')
+    await pipex(stream, reply)
+    next()
+    } //end of not-cached else
+  }
+
   fastify.route({
     url: '/sadcp',
     method: ['GET'],
@@ -339,184 +750,10 @@ str(speed, 8, 3) as "Speed(m/s)"
     }
   },*/
   handler: async (req, reply) => {
-      const qstr = req.query
-      let start='1991-01-01'
-      let end = 'NULL' //'' before modifed query to stored procedure in mssql 20220505
-      let allspan_avg_flag = 1 // modified 20220720: 2:for all time-span use sadcpavg procedure to fetch pre-calculated table
-                               // 1: have time-specific requirement use sadcpgridqry procedure (yyyymm);
-                               // 0: only for non gridded raw mode: sadcpqry
-      let qkey = 'SADCP_'
-      if (typeof qstr.start == 'undefined' && typeof qstr.end == 'undefined') {
-        allspan_avg_flag = 2
-        qkey = qkey + start + '_NA'
-        start = `"${start}"`
-        end = `"${end}"`
-      } else {
-        if (typeof qstr.start !== 'undefined') {
-          if (/^\d+\.?\d*$/.test(qstr.start) && qstr.start.length===8) {
-            start = qstr.start.substring(0, 4) + '-' + qstr.start.substring(4, 6) + '-' + qstr.start.substring(6)
-          }
-        }
-        qkey = qkey + start
-        start = `"${start}"`
-
-        if (typeof qstr.end !== 'undefined') {
-          if (/^\d+\.?\d*$/.test(qstr.end) && qstr.end.length===8) {
-            end = qstr.end.substring(0, 4) + '-' + qstr.end.substring(4, 6) + '-' + qstr.end.substring(6)
-            qkey = qkey + '_' + end
-          }
-        }
-        if (Date.parse(start) <= Date.parse('1991-12-31') && (end === 'NULL' ||
-            Date.parse(end) > Date.parse((parseInt(new Date().getFullYear())-1).toString() + '-12-31'))) {
-          allspan_avg_flag = 2
-        }
-        if (end === 'NULL') {
-          qkey = qkey + '_NA'
-        } else {
-          end = `"${end}"`
-        }
-      }
-
-      let limit = 'NULL'
-      if (typeof qstr.limit !== 'undefined') {
-        if (Number.isInteger(Number(qstr.limit)) && Number(qstr.limit) > 0) {
-          limit = parseInt(qstr.limit)
-          //qkey = qkey + '_' + limit.toString() //determined later
-        }
-      }
-      //fastify.log.info("url: " + req.url)
-      // 202207: addd dep_mode for depth ('range', 'mean', 'exact': use only dep0)
-      let dep_mode = 'NULL'
-      if (typeof qstr.dep_mode !== 'undefined') {
-        dep_mode = qstr.dep_mode.toLowerCase()
-        if (dep_mode !== 'range' && dep_mode !== 'mean' && dep_mode !== 'exact') {
-          dep_mode = 'NULL'
-        }
-      }
-      /*let mean = true //20220518 modified stored procedure in SQL SERVER that parameter 'mean' is replaced by mode
-        let mode = (qstr.mode??'average').toLowerCase() //'raw', may transfer huge data
-        if (mode === 'raw' ) { mean = false } */
-      // 202207: add raw0: means real raw data; raw1: gridded raw data but all limit 1000
-      let mode = 'NULL'
-      let period = [0]
-      if (typeof qstr.mode !== 'undefined') {
-        mode = qstr.mode.toLowerCase() //'raw', may transfer huge data
-        if (mode === 'monsoon') {
-          period = [17,18]
-        } else if (mode === 'season') {
-          period = [13,14,15,16]
-        } else if (mode === 'month') {
-          period = [1,2,3,4,5,6,7,8,9,10,11,12]
-        } else if (/^raw/.test(mode)) { //(mode === 'raw') {
-          if (limit === 'NULL' || limit >= 1000) { limit = 1000 }
-        } else {
-          if (Number.isInteger(Number(qstr.mode))) {
-            //fastify.log.info("Mode is integer!" + qstr.mode)
-            mode = qstr.mode
-            period = [parseInt(mode)]
-          } else {
-            mode = 'default' //default: is year mean
-          }
-        }
-        qkey = qkey + '_' + mode
-        if (mode === 'raw0') {
-          allspan_avg_flag = 0
-          mode = 'raw'
-        } else if (/^raw/.test(mode)) { //i.e. raw or raw1
-          allspan_avg_flag = 1
-          mode = 'raw'
-        }
-      }
-
-      let xorder = 'NULL'
-      if (typeof qstr.xorder !== 'undefined') {
-        if (Number.isInteger(Number(qstr.xorder))) {
-          xorder = parseInt(qstr.xorder)
-        }
-      }
-
-      let yorder = 'NULL'
-      if (typeof qstr.yorder !== 'undefined') {
-        if (Number.isInteger(Number(qstr.yorder))) {
-          yorder = parseInt(qstr.yorder)
-        }
-      }
-
-      let format = (qstr.format??'json').toLowerCase() //'json', 'geojson', 'uvgrid'
-      if (format === 'uvgrid') {
-        if (/raw/.test(mode)) {
-          mode = 'NULL';
-          if (allspan_avg_flag === 0) { allspan_avg_flag = 1 } //cannot be raw in uvgrid format
-        }
-        if (dep_mode === 'NULL' || /range/.test(dep_mode)) {
-          dep_mode = 'mean';  //cannot be multiple values for depth in uvgrid format
-        }
-        limit = 'NULL'
-        yorder = -2 //must DESC, and ordered by lat, lon
-        xorder = 1  //must increasing
-        //fastify.log.info("Test UVgrid mode: " + mode + " with period: " + JSON.stringify(period))
-      }
-      qkey = qkey + '_' + format
-
-      if (dep_mode === 'NULL') {
-        qkey = qkey + '_NA'
-      } else {
-        qkey = qkey + '_' + dep_mode
-        dep_mode = `"${dep_mode}"`
-      }
-
-      if (mode === 'NULL') {
-        qkey = qkey + '_' + 'default'
-      } else {
-        qkey = qkey + '_' + mode + '_' + allspan_avg_flag.toString()
-        mode = `"${mode}"`
-      }
-
-      let mean_threshold = qstr.mean_threshold??-1
-      let lon0 = qstr.lon0??105
-      let lon1 = qstr.lon1??135
-      let lat0 = qstr.lat0??2
-      let lat1 = qstr.lat1??35
-      let dep0 = qstr.dep0??-1
-      let dep1 = qstr.dep1??-1
-      //let std = (qstr.std??'').toLowerCase() //'woa13': `dbo.NODC_Standard_depths_woa13 group by depth`
-      //let output = (qstr.output??'').toLowerCase()    //'file', file output (not yet)
-      let qry = `USE [${fastify.config.SQLDBNAME}];
-                 EXEC [dbo].`
-      if (allspan_avg_flag==2) {
-        //fastify.log.info("Note: Only query stored mean-field table by sadcpavg procedure!")
-        qry= qry + `[sadcpavg] @lon0=${lon0}, @lon1=${lon1}, @lat0=${lat0}, @lat1=${lat1}, @dep0=${dep0}, @dep1=${dep1}, @dep_mode=${dep_mode}, ` +
-                   `@mode=${mode}, @xorder=${xorder}, @yorder=${yorder}, @limit=${limit}, @mean_threshold=${mean_threshold};`
-      } else if (allspan_avg_flag==1) {
-        //fastify.log.info("Note: Only query stored mean-field table by sadcpgridqry procedure!")
-        qry= qry + `[sadcpgridqry] @lon0=${lon0}, @lon1=${lon1}, @lat0=${lat0}, @lat1=${lat1}, @dep0=${dep0}, @dep1=${dep1}, @dep_mode=${dep_mode}, ` +
-                   `@mode=${mode}, @xorder=${xorder}, @yorder=${yorder}, @start=${start}, @end=${end}, @limit=${limit}, @mean_threshold=${mean_threshold};`
-      } else {
-        qry= qry + `[sadcpqry] @lon0=${lon0}, @lon1=${lon1}, @lat0=${lat0}, @lat1=${lat1}, @dep0=${dep0}, @dep1=${dep1}, @dep_mode=${dep_mode}, ` +
-                   `@mode=${mode}, @xorder=${xorder}, @yorder=${yorder}, @start=${start}, @end=${end}, @limit=${limit}, @mean_threshold=${mean_threshold};`
-      }
-      //let qkey=`${lon0}_${lon1}_${lat0}_${lat1}_${start}_${end}_${limit}_${mode}_${mean_threshold}_${xorder}_${yorder}`
-      if (limit === 'NULL') {
-        qkey = qkey + '_' + 'NA'
-      } else {
-        qkey = qkey + '_' + limit.toString()
-      }
-      if (xorder === 'NULL') {
-        qkey = qkey + '_' + 'NA'
-      } else {
-        qkey = qkey + '_' + xorder.toString()
-      }
-      if (yorder === 'NULL') {
-        qkey = qkey + '_' + 'NA'
-      } else {
-        qkey = qkey + '_' + yorder.toString()
-      }
-      qkey = qkey + '_' + mean_threshold.toString() + '_' + lon0.toString() + '_' + lon1.toString() +
-             '_' + lat0.toString() + '_' + lat1.toString() + '_' + dep0.toString() + '_' + dep1.toString()
-      //fastify.log.info("Query key is: " + qkey)
-      //fastify.log.info("Query command is: " + qry)
+    //const qstr = req.query
+    await queryPipe(req, reply, 'sadcp')
 /*
-      let qry0= `DECLARE @DT_START DATETIME;
+    let qry0= `DECLARE @DT_START DATETIME;
 DECLARE @DT_END DATETIME;
 DECLARE @INT_LON0 INT;
 DECLARE @INT_LON1 INT;
@@ -573,214 +810,11 @@ Order by [GMT+8],longitude_degree,latitude_degree
       //  callback()
       //}
     //})
-    reply.type('application/json')
-    const cached = streamCache.get(qkey)
-    if (cached) {
-      fastify.log.info("Sadcp Cached Hit!! " + qkey)
-      //reply.code(200)
-      //reply.sent = true
-      await cached.pipe(reply.raw)
-      await reply.code(200)
-      await reply.hijack() //deprecated: reply.sent = await true
-    /*.on('end', () => {
-          fastify.log.info("----Sadcp cache pipe end----")
-          reply.sent = true
-      })*/
-      next()
-    } else {
-    //fastify.log.info("!!Sadcp Cached Miss: " + qkey)
-    var count = 0
-    let bbox = [grd15moa(lon0), grd15moa(lat0), grd15moa(lon1), grd15moa(lat1)]
-    let grdnx= parseInt((bbox[2]-bbox[0])/0.25) + 1
-    let grdny= parseInt((bbox[3]-bbox[1])/0.25) + 1
-    let dx = 0.25
-    let dy = 0.25
-    //if (format==="uvgrid") {fastify.log.info("UV-grids format wit bbox: " + bbox + " and grid number: " + grdnx)}
-    var dc = 0 //total counter: dc = di * dj //some grids are missing value, need fill null
-    var di = 0 //x-grid counter
-    var dj = 0 //y-grid counter
-    var dp = 0 //time-period counter
-    var gridx = bbox[0]
-    var gridy = bbox[3] // note that latitude is decreasing in uvgrid format
-    var chkmissFlag = true
-    //var cacheout = [] //new PassThrough()
-    const cacheout = new Readable({ objectMode: true })
-    var predx = ''
-    const pipex = (src, res) => { //, opts = {end: false})
-      return new Promise((resolve, reject) => {
-      /*src //it works
-        .pipe(stringify())
-        .pipe(res.raw) //, {end: false})*/
-      /*src
-        .pipe(zlib.createGunzip())
-        .pipe(parser())
-        .pipe(new streamArray()) */
-        src.on('data', chunk => {
-          let data
-          let stat = {"gap":0}
-
-          if (format === 'uvgrid') {
-            if (count > 0 && (chunk.longitude !== gridx || chunk.latitude !== gridy)) {
-              dp = 0 //dp is the counter of time-period, i.e if mode=='season', period is [13,14,15,16], dp is 0-1-2-3
-              if (di >= grdnx) { //within the same dp, the counter (di, dj) are disabled to keep in the same gridx, gridy
-                di = 0
-                dj = dj + 1
-                gridx = bbox[0]
-                gridy = gridy - dy
-              } else {
-                di = di + 1
-                gridx = gridx + dx
-              }
-              dc = dc + 1
-              //fastify.log.info("Now compare (i,j): (" + di + ", " + dj + ") for grid: " + gridx + ", " + gridy + " with chunk: " + chunk.longitude + ", " + chunk.latitude)
-              if (chunk.longitude === gridx && chunk.latitude === gridy) {
-                chkmissFlag = false
-              } else {
-                chkmissFlag = true
-              }
-            } else if (chunk.longitude === gridx && chunk.latitude === gridy) {
-              if (dp >= period.length) {
-                fastify.log.info("Warning: time-period counter error: " + dp + " with period: " + period.length + " at n-th data: " + count)
-              }
-              chkmissFlag = false //if within the same dp, no need to check missing value on that grid
-            } else {
-              chkmissFlag = true
-            }
-          }
-
-          if (count === 0) {
-            if (format === 'geojson') {
-              predx = `{"type":"FeatureCollection","features": [`
-              res.raw.write(predx)
-              cacheout.push(predx)
-              data = JSON.stringify(toSadcpGeoJsonRow(chunk))
-            } else if (format === 'uvgrid') { //JSON format for GFS: https://github.com/cambecc/grib2json/blob/master/README.md
-              predx = `{"header":{"periodMode":${mode},"periodArray":${JSON.stringify(period)},"parameterCategory":11,"parameterNumber":1,"parameterNumberName":"UV-grids","parameterUnit":"m.s-1","refTime":null,"forcastTime":0,"lo1":${bbox[0]},"la1":${bbox[3]},"lo2":${bbox[2]},"la2":${bbox[1]},"nx":${grdnx},"ny":${grdny},"dx":${dx},"dy":${dy}},"data":[`
-              res.raw.write(predx)
-              cacheout.push(predx)
-              //if (chkmissFlag) { //count == 0 always check
-              stat = grdMissingVal(res, bbox[0], gridx, gridy, chunk.longitude, chunk.latitude, dc, di, dj, dx, dy, grdnx, period)
-              //}
-              if (stat.gap > 0) {
-                //if (dp === 0) { // means at start of period //here dp must 0
-                for(let i=0;i<stat.out.length;i++) {cacheout.push(stat.out[i])} //cacheout.push(...stat.out) //when using array
-                data =`,{"${chunk.time_period}":${JSON.stringify({u:chunk.u,v:chunk.v})}`
-                di = stat.di
-                dj = stat.dj
-                dc = dc + stat.gap
-                gridx = stat.cx
-                gridy = stat.cy
-              } else {
-                data =`{"${chunk.time_period}":${JSON.stringify({u:chunk.u,v:chunk.v})}`
-              /*di = di + 1
-                dc = dc + 1
-                gridx = gridx + dx*/
-              }
-              dp = dp + 1
-            } else {
-              res.raw.write(`[`)
-              cacheout.push(`[`)
-              data = JSON.stringify(chunk)
-            }
-          } else {
-            if (format === 'geojson') {
-              data =`,${JSON.stringify(toSadcpGeoJsonRow(chunk))}`;
-            } else if (format === 'uvgrid') {
-              if (chkmissFlag) {
-                stat = grdMissingVal(res, bbox[0], gridx, gridy, chunk.longitude, chunk.latitude, dc, di, dj, dx, dy, grdnx, period)
-              }
-              if (stat.gap > 0) {
-                for(let i=0;i<stat.out.length;i++) {cacheout.push(stat.out[i])} //cacheout.push(...stat.out) //when using array
-                data =`,{"${chunk.time_period}":${JSON.stringify({u:chunk.u,v:chunk.v})}`
-                di = stat.di
-                dj = stat.dj
-                dc = dc + stat.gap
-                gridx = stat.cx
-                gridy = stat.cy
-              } else {
-                if (dp === 0) {
-                  data =`},{"${chunk.time_period}":${JSON.stringify({u:chunk.u,v:chunk.v})}`
-                } else {
-                  data =`,"${chunk.time_period}":${JSON.stringify({u:chunk.u,v:chunk.v})}`
-                }
-               /*di = di + 1
-                dc = dc + 1
-                gridx = gridx + dx*/
-              }
-              dp = dp + 1
-            } else {
-              data =`,${JSON.stringify(chunk)}`;
-            }
-          }
-          count++
-        /*if (count % 999 === 0) { //debug
-            fastify.log.info("--!!Count: " + count)
-            fastify.log.info("------!!Data: " + data)
-          }*/
-          res.raw.write(data) //fastJson(sadcpSchema)(data)))
-          cacheout.push(data)
-        })
-        src.on('error', () => {
-          fastify.log.info("------!!SADCP Stream Error!!-------")
-          //reject
-        })
-        src.on('end', () => {
-          if (format === 'geojson') {
-            res.raw.write(`]}`)
-            cacheout.push(`]}`)
-          } else if (format === 'uvgrid') {
-            res.raw.write(`}]}`)
-            cacheout.push(`}]}`)
-          } else {
-            res.raw.write(`]`)
-            cacheout.push(`]`)
-          } //'end' event will before 'finish'
-          cacheout.push(null)
-        //fastify.log.info("Now Set cache with data length: " + cacheout.length)
-        /*const cachers = new Readable({
-            objectMode: true,
-            //encoding: 'utf8',
-            read() {
-              const item = cacheout.shift()
-              if (!item) {
-                this.push(null)
-                return
-              }
-              this.push(item)
-            }
-          }) */
-          cacheout.pipe(streamCache.set(qkey)) //.on('error', err => {
-          //  fastify.log.info("Set cache error: " + err)
-          //})
-          fastify.log.info("------!!SADCP Stream End with cache set!! " + qkey)
-        })
-        src.on('finish', () => { //'end'
-          //res.raw.write(']')
-          fastify.log.info("------!!SADCP Stream finish!!-------")
-          res.raw.end()  //https://stackoverflow.com/questions/70389882/nodejs-stream-returns-incomplete-response
-          reply.hijack() //deprecated: res.sent = true
-          resolve
-        })
-        //res.send(src.pipe(stringify()))
-      })
-    }
-
-    const stream = sqldb //.raw(qry0 + qry1 + qry2).stream()
-                     .raw(qry).stream({ objectMode: true })
-    stream._read = ()=>{}
-    //reply.header('Content-Type', 'application/stream+json')
-    //reply.type('application/json')
-    await pipex(stream, reply)
-  /*req.on('close', () => {
-      stream.end();
-      //stream.destroy();
-      fastify.log.info("------!!Stream input close!!-------");
-    })*/
 /*  NO-Stream mode, it works. */
   //const data = await sqldb.raw(qry)
   //reply.send(data)
-    next()
-  } } //else cached //added @hqjs/stream-buffer-cache 20220524
+  //next()
+   } //else cached //added @hqjs/stream-buffer-cache 20220524
   })
 
 /* CTD API START */
@@ -815,226 +849,9 @@ Order by [GMT+8],longitude_degree,latitude_degree
           S.oneOf([ctdJsonSchema, ctdGJsonSchema])
       }
     },
-  handler: async (req, reply) => {
-      const qstr = req.query
-      let start='1991-01-01'
-      let end = 'NULL'
-      let allspan_avg_flag = 1
-      let qkey = 'CTD_'
-      if (typeof qstr.start == 'undefined' && typeof qstr.end == 'undefined') {
-        allspan_avg_flag = 2
-        qkey = qkey + start + '_NA'
-        start = `"${start}"`
-        end = `"${end}"`
-      } else {
-        if (typeof qstr.start !== 'undefined') {
-          if (/^\d+\.?\d*$/.test(qstr.start) && qstr.start.length===8) {
-            start = qstr.start.substring(0, 4) + '-' + qstr.start.substring(4, 6) + '-' + qstr.start.substring(6)
-          }
-        }
-        qkey = qkey + start
-        start = `"${start}"`
-
-        if (typeof qstr.end !== 'undefined') {
-          if (/^\d+\.?\d*$/.test(qstr.end) && qstr.end.length===8) {
-            end = qstr.end.substring(0, 4) + '-' + qstr.end.substring(4, 6) + '-' + qstr.end.substring(6)
-            qkey = qkey + '_' + end
-          }
-        }
-        if (Date.parse(start) <= Date.parse('1991-12-31') && (end === 'NULL' ||
-            Date.parse(end) > Date.parse((parseInt(new Date().getFullYear())-1).toString() + '-12-31'))) {
-          allspan_avg_flag = 2
-        }
-        if (end === 'NULL') {
-          qkey = qkey + '_NA'
-        } else {
-          end = `"${end}"`
-        }
-      }
-
-      let limit = 'NULL'
-      if (typeof qstr.limit !== 'undefined') {
-        if (Number.isInteger(Number(qstr.limit)) && Number(qstr.limit) > 0) {
-          limit = parseInt(qstr.limit)
-        }
-      }
-      let dep_mode = 'NULL'
-      if (typeof qstr.dep_mode !== 'undefined') {
-        dep_mode = qstr.dep_mode.toLowerCase()
-        if (dep_mode !== 'range' && dep_mode !== 'mean' && dep_mode !== 'exact') {
-          dep_mode = 'NULL'
-        }
-      }
-
-      let mode = 'NULL'
-      let period = [0]
-      if (typeof qstr.mode !== 'undefined') {
-        mode = qstr.mode.toLowerCase() //'raw', may transfer huge data
-        if (mode === 'monsoon') {
-          period = [17,18]
-        } else if (mode === 'season') {
-          period = [13,14,15,16]
-        } else if (mode === 'month') {
-          period = [1,2,3,4,5,6,7,8,9,10,11,12]
-        } else if (/^raw/.test(mode)) { //(mode === 'raw') {
-          if (limit === 'NULL' || limit >= 1000) { limit = 1000 }
-        } else {
-          if (Number.isInteger(Number(qstr.mode))) {
-            mode = qstr.mode
-            period = [parseInt(mode)]
-          } else {
-            mode = 'default' //default: is year mean
-          }
-        }
-        qkey = qkey + '_' + mode
-        if (mode === 'raw0') {
-          allspan_avg_flag = 0
-          mode = 'raw'
-        } else if (/^raw/.test(mode)) { //i.e. raw or raw1
-          allspan_avg_flag = 1
-          mode = 'raw'
-        }
-      }
-
-      let xorder = 'NULL'
-      if (typeof qstr.xorder !== 'undefined') {
-        if (Number.isInteger(Number(qstr.xorder))) {
-          xorder = parseInt(qstr.xorder)
-        }
-      }
-
-      let yorder = 'NULL'
-      if (typeof qstr.yorder !== 'undefined') {
-        if (Number.isInteger(Number(qstr.yorder))) {
-          yorder = parseInt(qstr.yorder)
-        }
-      }
-
-      let format = (qstr.format??'json').toLowerCase() //'json', 'geojson'
-      qkey = qkey + '_' + format
-
-      if (dep_mode === 'NULL') {
-        qkey = qkey + '_NA'
-      } else {
-        qkey = qkey + '_' + dep_mode
-        dep_mode = `"${dep_mode}"`
-      }
-
-      if (mode === 'NULL') {
-        qkey = qkey + '_' + 'default'
-      } else {
-        qkey = qkey + '_' + mode + '_' + allspan_avg_flag.toString()
-        mode = `"${mode}"`
-      }
-
-      let mean_threshold = qstr.mean_threshold??-1
-      let lon0 = qstr.lon0??105
-      let lon1 = qstr.lon1??135
-      let lat0 = qstr.lat0??2
-      let lat1 = qstr.lat1??35
-      let dep0 = qstr.dep0??-1
-      let dep1 = qstr.dep1??-1
-      let qry = `USE [${fastify.config.SQLDBNAME}];
-                 EXEC [dbo].`
-      if (allspan_avg_flag==2) {
-        qry= qry + `[ctdavg] @lon0=${lon0}, @lon1=${lon1}, @lat0=${lat0}, @lat1=${lat1}, @dep0=${dep0}, @dep1=${dep1}, @dep_mode=${dep_mode}, ` +
-                   `@mode=${mode}, @xorder=${xorder}, @yorder=${yorder}, @limit=${limit}, @mean_threshold=${mean_threshold};`
-      } else if (allspan_avg_flag==1) {
-        qry= qry + `[ctdgridqry] @lon0=${lon0}, @lon1=${lon1}, @lat0=${lat0}, @lat1=${lat1}, @dep0=${dep0}, @dep1=${dep1}, @dep_mode=${dep_mode}, ` +
-                   `@mode=${mode}, @xorder=${xorder}, @yorder=${yorder}, @start=${start}, @end=${end}, @limit=${limit}, @mean_threshold=${mean_threshold};`
-      } else {
-        qry= qry + `[ctdqry] @lon0=${lon0}, @lon1=${lon1}, @lat0=${lat0}, @lat1=${lat1}, @dep0=${dep0}, @dep1=${dep1}, @dep_mode=${dep_mode}, ` +
-                   `@mode=${mode}, @xorder=${xorder}, @yorder=${yorder}, @start=${start}, @end=${end}, @limit=${limit}, @mean_threshold=${mean_threshold};`
-      }
-
-      if (limit === 'NULL') {
-        qkey = qkey + '_' + 'NA'
-      } else {
-        qkey = qkey + '_' + limit.toString()
-      }
-      if (xorder === 'NULL') {
-        qkey = qkey + '_' + 'NA'
-      } else {
-        qkey = qkey + '_' + xorder.toString()
-      }
-      if (yorder === 'NULL') {
-        qkey = qkey + '_' + 'NA'
-      } else {
-        qkey = qkey + '_' + yorder.toString()
-      }
-      qkey = qkey + '_' + mean_threshold.toString() + '_' + lon0.toString() + '_' + lon1.toString() +
-             '_' + lat0.toString() + '_' + lat1.toString() + '_' + dep0.toString() + '_' + dep1.toString()
-      //fastify.log.info("CTD Query key is: " + qkey)
-      //fastify.log.info("CTD Query command is: " + qry)
-
-    reply.type('application/json')
-    const cached = streamCache.get(qkey)
-    if (cached) {
-      fastify.log.info("CTD Cached Hit!! " + qkey)
-      await cached.pipe(reply.raw)
-      await reply.code(200)
-      await reply.hijack()
-      next()
-    } else {
-    //fastify.log.info("!!CTD Cached Miss: " + qkey)
-    var count = 0
-    const cacheout = new Readable({ objectMode: true })
-    var predx = ''
-    const pipex = (src, res) => {
-      return new Promise((resolve, reject) => {
-        src.on('data', chunk => {
-          let data
-          if (count === 0) {
-            if (format === 'geojson') {
-              predx = `{"type":"FeatureCollection","features": [`
-              res.raw.write(predx)
-              cacheout.push(predx)
-              data = JSON.stringify(toCtdGeoJsonRow(chunk))
-            } else {
-              res.raw.write(`[`)
-              cacheout.push(`[`)
-              data = JSON.stringify(chunk)
-            }
-          } else {
-            if (format === 'geojson') {
-              data =`,${JSON.stringify(toCtdGeoJsonRow(chunk))}`;
-            } else {
-              data =`,${JSON.stringify(chunk)}`;
-            }
-          }
-          count++
-          res.raw.write(data) //fastJson(sadcpSchema)(data)))
-          cacheout.push(data)
-        })
-        src.on('error', () => {
-          fastify.log.info("------!!CTD Stream Error!!-------")
-        })
-        src.on('end', () => {
-          if (format === 'geojson') {
-            res.raw.write(`]}`)
-            cacheout.push(`]}`)
-          } else {
-            res.raw.write(`]`)
-            cacheout.push(`]`)
-          }
-          cacheout.push(null)
-          cacheout.pipe(streamCache.set(qkey)) //.on('error', err => {
-          fastify.log.info("------!!CTD Stream End with cache set!! " + qkey)
-        })
-        src.on('finish', () => {
-          fastify.log.info("------!!CTD Stream finish!!-------")
-          res.raw.end()
-          reply.hijack()
-          resolve
-        })
-      })
+    handler: async (req, reply) => {
+      await queryPipe(req, reply, 'ctd')
     }
-
-    const stream = sqldb.raw(qry).stream({ objectMode: true })
-    stream._read = ()=>{}
-    await pipex(stream, reply)
-    next()
-  } }
   })
 /* CTD API END*/
 }
