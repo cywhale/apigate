@@ -26,18 +26,18 @@
 		"@fastify/static": "^6.5.0",
 		"@fastify/swagger": "^7.4.1",
 		"desm": "^1.2.0",
-		"fastify": "^4.4.0",
-		"fastify-plugin": "^4.1.0",
+		"fastify": "^4.5.2",
+		"fastify-plugin": "^4.2.0",
 		"fluent-json-schema": "^3.1.0",
 		"fs": "^0.0.2",
 		"knex": "^2.2.0",
 		"lru-cache": "^7.13.1",
 		"mercurius": "^10.1.0",
 		"mercurius-cache": "^2.0.0",
-		"mongoose": "^6.4.5"
+		"mongoose": "^6.4.5",
+		"tedious": "^15.0.1"
 	},
 	"devDependencies": {
-		"nodemon": "^2.0.19",
-		"tedious": "^14.7.0"
+		"nodemon": "^2.0.19"
 	}
 }

@@ -273,7 +273,17 @@ str(speed, 8, 3) as "Speed(m/s)"
       let allspan_avg_flag = 1 // modified 20220720: 2:for all time-span use sadcpavg procedure to fetch pre-calculated table
                                // 1: have time-specific requirement use sadcpgridqry procedure (yyyymm);
                                // 0: only for non gridded raw mode: sadcpqry
-      let qkey = keyx==='sadcp'? 'SADCP_' : 'CTD_'
+      let qkey, vars, append   // vars: possible output variables from database
+      if (keyx==='sadcp') {
+        qkey = 'SADCP_'
+        vars = ['u', 'v', 'direction', 'speed', 'count']
+        append = 'u,v'
+      } else {
+        qkey = 'CTD_'
+        vars = ['temperature', 'salinity', 'fluorescence', 'transmission', 'oxygen', 'count']
+        append = 'temperature'
+      }
+
       if (typeof qstr.start == 'undefined' && typeof qstr.end == 'undefined') {
         allspan_avg_flag = 2
         qkey = qkey + start + '_NA'
@@ -407,6 +417,21 @@ str(speed, 8, 3) as "Speed(m/s)"
       }
       qkey = qkey + '_' + format
 
+      let appendx = []
+      let vset
+      if (typeof qstr.append !== 'undefined') {
+        if (keyx !== 'sadcp' || format !== 'uvgrid') {
+          vset= new Set(qstr.append.trim().split(/\s*,\s*/));
+          appendx = vars.filter(item => vset.has(item));
+          //fastify.log.info("Receive: " + qstr.append + " and Append: " + `"${appendx.join(',')}"`)
+        }
+      }
+      if (appendx.length) {
+        append = appendx.join(',')
+      }
+      qkey = qkey + '_' + append
+      append = `"${append}"`
+
       if (dep_mode === 'NULL') {
         qkey = qkey + '_NA'
       } else {
@@ -435,14 +460,14 @@ str(speed, 8, 3) as "Speed(m/s)"
       if (allspan_avg_flag==2) {
         //fastify.log.info("Note: Only query stored mean-field table by sadcpavg procedure!")
         qry= qry + `[${keyx}avg] @lon0=${lon0}, @lon1=${lon1}, @lat0=${lat0}, @lat1=${lat1}, @dep0=${dep0}, @dep1=${dep1}, @dep_mode=${dep_mode}, ` +
-                   `@mode=${mode}, @xorder=${xorder}, @yorder=${yorder}, @limit=${limit}, @mean_threshold=${mean_threshold};`
+                   `@mode=${mode}, @xorder=${xorder}, @yorder=${yorder}, @limit=${limit}, @mean_threshold=${mean_threshold}, @append=${append};`
       } else if (allspan_avg_flag==1) {
         //fastify.log.info("Note: Only query stored mean-field table by sadcpgridqry procedure!")
         qry= qry + `[${keyx}gridqry] @lon0=${lon0}, @lon1=${lon1}, @lat0=${lat0}, @lat1=${lat1}, @dep0=${dep0}, @dep1=${dep1}, @dep_mode=${dep_mode}, ` +
-                   `@mode=${mode}, @xorder=${xorder}, @yorder=${yorder}, @start=${start}, @end=${end}, @limit=${limit}, @mean_threshold=${mean_threshold};`
+                   `@mode=${mode}, @xorder=${xorder}, @yorder=${yorder}, @start=${start}, @end=${end}, @limit=${limit}, @mean_threshold=${mean_threshold}, @append=${append};`
       } else {
         qry= qry + `[${keyx}qry] @lon0=${lon0}, @lon1=${lon1}, @lat0=${lat0}, @lat1=${lat1}, @dep0=${dep0}, @dep1=${dep1}, @dep_mode=${dep_mode}, ` +
-                   `@mode=${mode}, @xorder=${xorder}, @yorder=${yorder}, @start=${start}, @end=${end}, @limit=${limit}, @mean_threshold=${mean_threshold};`
+                   `@mode=${mode}, @xorder=${xorder}, @yorder=${yorder}, @start=${start}, @end=${end}, @limit=${limit}, @mean_threshold=${mean_threshold}, @append=${append};`
       }
       //let qkey=`${lon0}_${lon1}_${lat0}_${lat1}_${start}_${end}_${limit}_${mode}_${mean_threshold}_${xorder}_${yorder}`
       if (limit === 'NULL') {
@@ -698,7 +723,9 @@ str(speed, 8, 3) as "Speed(m/s)"
           start: { type: 'string' },
           end: { type: 'string'},
           limit: { type: 'integer'},
-          mean_threshld: { type: 'string'}
+          mean_threshold: { type: 'string'},
+          append: { type: 'string', default: 'u,v',
+                    description: `Output multi-variables by comma-separated string: "u,v,count"`}
         }
       },
 /*    headers: { //S.object().prop('x-ocpu-cache', S.string()),
@@ -841,7 +868,9 @@ Order by [GMT+8],longitude_degree,latitude_degree
           start: { type: 'string' },
           end: { type: 'string'},
           limit: { type: 'integer'},
-          mean_threshld: { type: 'string'}
+          mean_threshold: { type: 'string'},
+          append: { type: 'string', default: 'temperature',
+                    description: `Output multi-variables by comma-separated string: "temperature,salinity,fluorescence,transmission,oxygen,count"`}
         }
       },
       response: {
