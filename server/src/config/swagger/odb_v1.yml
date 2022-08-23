@@ -1,0 +1,306 @@
+swagger: '2.0'
+info:
+  title: ODB Open API
+  description: >-
+    ## **APIGATE** Manual
+
+    * This swagger-UI is just for trials of ODB open API.
+
+    * Specify smaller longitude/latitude/depth range can get faster response.
+
+    * Directly using these APIs by HTTP GET method (shown as the block of
+    Request URL) can be even much faster.
+
+    * Note that *this UI may get stuck if too much data being queryed.*
+  version: 1.0.0
+definitions: {}
+paths:
+  /api/sadcp:
+    get:
+      description: ODB SADCP API
+      tags:
+        - sadcp
+      parameters:
+        - type: number
+          required: false
+          in: query
+          name: lon0
+        - type: number
+          required: false
+          in: query
+          name: lon1
+        - type: number
+          required: false
+          in: query
+          name: lat0
+        - type: number
+          required: false
+          in: query
+          name: lat1
+        - type: number
+          required: false
+          in: query
+          name: dep0
+        - type: number
+          required: false
+          in: query
+          name: dep1
+        - type: string
+          required: false
+          in: query
+          name: dep_mode
+        - type: string
+          required: false
+          in: query
+          name: mode
+        - type: string
+          required: false
+          in: query
+          name: format
+        - type: integer
+          required: false
+          in: query
+          name: xorder
+        - type: integer
+          required: false
+          in: query
+          name: yorder
+        - type: string
+          required: false
+          in: query
+          name: start
+        - type: string
+          required: false
+          in: query
+          name: end
+        - type: integer
+          required: false
+          in: query
+          name: limit
+        - type: string
+          required: false
+          in: query
+          name: mean_threshold
+        - type: string
+          default: u,v
+          description: 'Output multi-variables by comma-separated string: "u,v,count"'
+          required: false
+          in: query
+          name: append
+      responses:
+        '200':
+          description: Default Response
+          schema:
+            oneOf:
+              - type: object
+                $id: '#sadcpjson'
+                description: SADCP ok (in JSON)
+                properties:
+                  longitude:
+                    type: number
+                  latitude:
+                    type: number
+                  time_period:
+                    type: integer
+                  depth:
+                    type: number
+                  u:
+                    type: number
+                  v:
+                    type: number
+                  direction:
+                    type: number
+                  speed:
+                    type: number
+                  datetime:
+                    type: string
+                  year:
+                    type: integer
+                  month:
+                    type: integer
+                  count:
+                    type: integer
+                title: '#sadcpjson'
+              - type: object
+                $id: '#sadcpgjson'
+                description: SADCP ok (in GeoJSON)
+                properties:
+                  type:
+                    type: string
+                  geometry:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                      coordinates:
+                        type: array
+                        minItems: 2
+                        items:
+                          type: number
+                  properties:
+                    type: object
+                    properties:
+                      time_period:
+                        type: integer
+                      depth:
+                        type: number
+                      u:
+                        type: number
+                      v:
+                        type: number
+                      count:
+                        type: integer
+                title: '#sadcpgjson'
+  /api/ctd:
+    get:
+      description: ODB CTD API
+      tags:
+        - ctd
+      parameters:
+        - type: number
+          required: false
+          in: query
+          name: lon0
+        - type: number
+          required: false
+          in: query
+          name: lon1
+        - type: number
+          required: false
+          in: query
+          name: lat0
+        - type: number
+          required: false
+          in: query
+          name: lat1
+        - type: number
+          required: false
+          in: query
+          name: dep0
+        - type: number
+          required: false
+          in: query
+          name: dep1
+        - type: string
+          required: false
+          in: query
+          name: dep_mode
+        - type: string
+          required: false
+          in: query
+          name: mode
+        - type: string
+          required: false
+          in: query
+          name: format
+        - type: integer
+          required: false
+          in: query
+          name: xorder
+        - type: integer
+          required: false
+          in: query
+          name: yorder
+        - type: string
+          required: false
+          in: query
+          name: start
+        - type: string
+          required: false
+          in: query
+          name: end
+        - type: integer
+          required: false
+          in: query
+          name: limit
+        - type: string
+          required: false
+          in: query
+          name: mean_threshold
+        - type: string
+          default: temperature
+          description: >-
+            Output multi-variables by comma-separated string:
+            "temperature,salinity,fluorescence,transmission,oxygen,count"
+          required: false
+          in: query
+          name: append
+      responses:
+        '200':
+          description: Default Response
+          schema:
+            oneOf:
+              - type: object
+                $id: '#ctdjson'
+                description: CTD ok (in JSON)
+                properties:
+                  longitude:
+                    type: number
+                  latitude:
+                    type: number
+                  time_period:
+                    type: integer
+                  depth:
+                    type: number
+                  temperature:
+                    type: number
+                  salinity:
+                    type: number
+                  fluorescence:
+                    type: number
+                  transmission:
+                    type: number
+                  oxygen:
+                    type: number
+                  datetime:
+                    type: string
+                  year:
+                    type: integer
+                  month:
+                    type: integer
+                  count:
+                    type: integer
+                title: '#ctdjson'
+              - type: object
+                $id: '#ctdgjson'
+                description: CTD ok (in GeoJSON)
+                properties:
+                  type:
+                    type: string
+                  geometry:
+                    type: object
+                    properties:
+                      type:
+                        type: string
+                      coordinates:
+                        type: array
+                        minItems: 2
+                        items:
+                          type: number
+                  properties:
+                    type: object
+                    properties:
+                      time_period:
+                        type: integer
+                      depth:
+                        type: number
+                      temperature:
+                        type: number
+                      salinity:
+                        type: number
+                      fluorescence:
+                        type: number
+                      transmission:
+                        type: number
+                      oxygen:
+                        type: number
+                      count:
+                        type: integer
+                title: '#ctdgjson'
+host: ecodata.odb.ntu.edu.tw
+schemes:
+  - https
+consumes:
+  - application/json
+produces:
+  - application/json

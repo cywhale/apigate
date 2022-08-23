@@ -1,0 +1,1066 @@
+openapi: 3.0.1
+info:
+  title: OBIS API v3
+servers:
+  - url: https://api.obis.org/v3/
+components:
+  parameters:
+    scientificname:
+      name: scientificname
+      in: query
+      description: "Scientific name. Leave empty to include all taxa."
+      schema:
+        type: string
+    scientificname_path:
+      name: scientificname
+      in: path
+      description: "Scientific name."
+      schema:
+        type: string
+    taxonid:
+      name: taxonid
+      in: query
+      description: "Taxon AphiaID."
+      schema:
+        type: string
+    id_taxon:
+      name: id
+      in: path
+      description: "Taxon AphiaID."
+      schema:
+        type: integer
+    id_node:
+      name: id
+      in: path
+      description: "Node UUID."
+      schema:
+        type: string
+    id_occurrence:
+      name: id
+      in: path
+      description: "Occurrence UUID."
+      schema:
+        type: string
+    id_institute:
+      name: id
+      in: path
+      description: "Institute ID."
+      schema:
+        type: string
+    id_area:
+      name: id
+      in: path
+      description: "Area ID."
+      schema:
+        type: string
+    id_country:
+      name: id
+      in: path
+      description: "Country ID."
+      schema:
+        type: string
+    datasetid:
+      name: datasetid
+      in: query
+      description: "Dataset UUID."
+      schema:
+        type: string
+    areaid:
+      name: areaid
+      in: query
+      description: "Area ID."
+      schema:
+        type: string
+    instituteid:
+      name: instituteid
+      in: query
+      description: "Institute ID."
+      schema:
+        type: string
+    nodeid:
+      name: nodeid
+      in: query
+      description: "Node UUID."
+      schema:
+        type: string
+    startdate:
+      name: startdate
+      in: query
+      description: "Start date formatted as YYYY-MM-DD."
+      schema:
+        type: string
+    taxonrank:
+      name: taxonrank
+      in: query
+      description: "Taxon rank."
+      schema:
+        type: string
+    enddate:
+      name: enddate
+      in: query
+      description: "End date formatted as YYYY-MM-DD."
+      schema:
+        type: string
+    startdepth:
+      name: startdepth
+      in: query
+      description: "Start depth, in meters."
+      schema:
+        type: integer
+    enddepth:
+      name: enddepth
+      in: query
+      description: "End depth, in meters."
+      schema:
+        type: integer
+    geometry:
+      name: geometry
+      in: query
+      description: "Geometry, formatted as WKT or GeoHash."
+      schema:
+        type: string
+    measurementtype:
+      name: measurementtype
+      in: query
+      description: "Measurement type to be present for occurrence."
+      schema:
+        type: string
+    measurementtypeid:
+      name: measurementtypeid
+      in: query
+      description: "Measurement type ID to be present for occurrence."
+      schema:
+        type: string
+    measurementvalue:
+      name: measurementvalue
+      in: query
+      description: "Measurement value to be present for occurrence."
+      schema:
+        type: string
+    measurementvalueid:
+      name: measurementvalueid
+      in: query
+      description: "Measurement value ID to be present for occurrence."
+      schema:
+        type: string
+    measurementunit:
+      name: measurementunit
+      in: query
+      description: "Measurement unit to be present for occurrence."
+      schema:
+        type: string
+    measurementunitid:
+      name: measurementunitid
+      in: query
+      description: "Measurement unit ID to be present for occurrence."
+      schema:
+        type: string
+    redlist:
+      name: redlist
+      in: query
+      description: "Red List species only, true/false."
+      schema:
+        type: boolean
+    hab:
+      name: hab
+      in: query
+      description: "HAB species only, true/false."
+      schema:
+        type: boolean
+    wrims:
+      name: wrims
+      in: query
+      description: "WRiMS species only, true/false."
+      schema:
+        type: boolean
+    mof:
+      name: mof
+      in: query
+      description: "Include MeasurementOrFact records, true/false."
+      schema:
+        type: boolean
+    dna:
+      name: dna
+      in: query
+      description: "Include DNADerivedData records, true/false."
+      schema:
+        type: boolean
+    extensions:
+      name: extensions
+      in: query
+      description: "Extensions to include (e.g. MeasurementOrFact, DNADerivedData)."
+      schema:
+        type: string
+    hasextensions:
+      name: hasextensions
+      in: query
+      description: "Extensions that need to be present (e.g. MeasurementOrFact, DNADerivedData)."
+      schema:
+        type: string
+    qcfields:
+      name: qcfields
+      in: query
+      description: "Include lists of missing and invalid fields, true/false."
+      schema:
+        type: boolean
+    dropped:
+      name: dropped
+      in: query
+      description: "Include dropped records (include) or get dropped records exclusively (true)."
+      schema:
+        type: string
+    absence:
+      name: absence
+      in: query
+      description: "Include absence records (include) or get absence records exclusively (true)."
+      schema:
+        type: string
+    event:
+      name: event
+      in: query
+      description: "Include pure event records (include) or get pure event records exclusively (true)."
+      schema:
+        type: string
+    facets:
+      name: facets
+      in: query
+      description: "Comma separated list of facets (e.g. originalScientificName, flags)."
+      schema:
+        type: string
+    composite:
+      name: composite
+      in: query
+      description: "Composite aggregation"
+      schema:
+        type: boolean
+    flags:
+      name: flags
+      in: query
+      description: "Comma separated list of quality flags which need to be set."
+      schema:
+        type: string
+    exclude:
+      name: exclude
+      in: query
+      description: "Comma separated list of quality flags to be excluded."
+      schema:
+        type: string
+    fields:
+      name: fields
+      in: query
+      description: "Fields to be included in the result set."
+      schema:
+        type: string
+    after:
+      name: after
+      in: query
+      description: "Occurrence UUID up to which to skip."
+      schema:
+        type: string
+    size_occurrence:
+      name: size
+      in: query
+      description: "Response size."
+      schema:
+        type: integer
+    precision_path:
+      name: precision
+      in: path
+      description: "Geohash precision."
+      schema:
+        type: integer
+    precision_query:
+      name: precision
+      in: query
+      description: "Geohash precision (default adaptive based on zoom level and cellspertile)."
+      schema:
+        type: integer
+    tiletype:
+      name: tiletype
+      in: query
+      description: "Vector tile type (point or polygon, default polygon)."
+      schema:
+        type: string
+    margin:
+      name: margin
+      in: query
+      description: "Tile margin in Geohash units (default 1)."
+      schema:
+        type: integer
+    cellspertile:
+      name: cellspertile
+      in: query
+      description: "Grid cells per tile in X direction (default 20)."
+      schema:
+        type: integer
+  responses:
+    "200":
+      description: "Successful response."
+
+paths:
+
+  /occurrence:
+    get:
+      tags:
+        - Occurrence
+      summary: "Find occurrence records."
+      description: "Find occurrence records."
+      parameters:
+        - $ref: "#/components/parameters/scientificname"
+        - $ref: "#/components/parameters/taxonid"
+        - $ref: "#/components/parameters/datasetid"
+        - $ref: "#/components/parameters/areaid"
+        - $ref: "#/components/parameters/instituteid"
+        - $ref: "#/components/parameters/nodeid"
+        - $ref: "#/components/parameters/startdate"
+        - $ref: "#/components/parameters/enddate"
+        - $ref: "#/components/parameters/startdepth"
+        - $ref: "#/components/parameters/enddepth"
+        - $ref: "#/components/parameters/geometry"
+        - $ref: "#/components/parameters/redlist"
+        - $ref: "#/components/parameters/hab"
+        - $ref: "#/components/parameters/wrims"
+        - $ref: "#/components/parameters/mof"
+        - $ref: "#/components/parameters/dna"
+        - $ref: "#/components/parameters/extensions"
+        - $ref: "#/components/parameters/hasextensions"
+        - $ref: "#/components/parameters/qcfields"
+        - $ref: "#/components/parameters/dropped"
+        - $ref: "#/components/parameters/absence"
+        - $ref: "#/components/parameters/event"
+        - $ref: "#/components/parameters/flags"
+        - $ref: "#/components/parameters/exclude"
+        - $ref: "#/components/parameters/fields"
+        - $ref: "#/components/parameters/after"
+        - $ref: "#/components/parameters/size_occurrence"
+        - $ref: "#/components/parameters/measurementtype"
+        - $ref: "#/components/parameters/measurementtypeid"
+        - $ref: "#/components/parameters/measurementvalue"
+        - $ref: "#/components/parameters/measurementvalueid"
+        - $ref: "#/components/parameters/measurementunit"
+        - $ref: "#/components/parameters/measurementunitid"
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+  /occurrence/{id}:
+    get:
+      summary: "Fetch a single occurrence record."
+      description: "Fetch a single occurrence record."
+      tags:
+        - Occurrence
+      parameters:
+        - $ref: "#/components/parameters/id_occurrence"
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+  /occurrence/grid/{precision}:
+    get:
+      summary: "Fetch gridded occurrences as GeoJSON."
+      description: "Fetch gridded occurrences as GeoJSON."
+      tags:
+      - Occurrence
+      parameters:
+      - $ref: "#/components/parameters/precision_path"
+      - $ref: "#/components/parameters/scientificname"
+      - $ref: "#/components/parameters/taxonid"
+      - $ref: "#/components/parameters/datasetid"
+      - $ref: "#/components/parameters/areaid"
+      - $ref: "#/components/parameters/instituteid"
+      - $ref: "#/components/parameters/nodeid"
+      - $ref: "#/components/parameters/startdate"
+      - $ref: "#/components/parameters/enddate"
+      - $ref: "#/components/parameters/startdepth"
+      - $ref: "#/components/parameters/enddepth"
+      - $ref: "#/components/parameters/geometry"
+      - $ref: "#/components/parameters/redlist"
+      - $ref: "#/components/parameters/hab"
+      - $ref: "#/components/parameters/wrims"
+      - $ref: "#/components/parameters/dropped"
+      - $ref: "#/components/parameters/absence"
+      - $ref: "#/components/parameters/event"
+      - $ref: "#/components/parameters/flags"
+      - $ref: "#/components/parameters/exclude"
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+  /occurrence/grid/{precision}/kml:
+    get:
+      summary: "Fetch gridded occurrences as KML."
+      description: "Fetch gridded occurrences as KML."
+      tags:
+      - Occurrence
+      parameters:
+      - $ref: "#/components/parameters/precision_path"
+      - $ref: "#/components/parameters/scientificname"
+      - $ref: "#/components/parameters/taxonid"
+      - $ref: "#/components/parameters/datasetid"
+      - $ref: "#/components/parameters/areaid"
+      - $ref: "#/components/parameters/instituteid"
+      - $ref: "#/components/parameters/nodeid"
+      - $ref: "#/components/parameters/startdate"
+      - $ref: "#/components/parameters/enddate"
+      - $ref: "#/components/parameters/startdepth"
+      - $ref: "#/components/parameters/enddepth"
+      - $ref: "#/components/parameters/geometry"
+      - $ref: "#/components/parameters/redlist"
+      - $ref: "#/components/parameters/hab"
+      - $ref: "#/components/parameters/wrims"
+      - $ref: "#/components/parameters/exclude"
+      - $ref: "#/components/parameters/dropped"
+      - $ref: "#/components/parameters/absence"
+      - $ref: "#/components/parameters/event"
+      - $ref: "#/components/parameters/flags"
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+  /occurrence/points:
+    get:
+      summary: "Fetch point occurrences as GeoJSON (aggregated to Geohash precision 8)."
+      description: "Fetch point occurrences as GeoJSON (aggregated to Geohash precision 8)."
+      tags:
+        - Occurrence
+      parameters:
+        - $ref: "#/components/parameters/scientificname"
+        - $ref: "#/components/parameters/taxonid"
+        - $ref: "#/components/parameters/datasetid"
+        - $ref: "#/components/parameters/areaid"
+        - $ref: "#/components/parameters/instituteid"
+        - $ref: "#/components/parameters/nodeid"
+        - $ref: "#/components/parameters/startdate"
+        - $ref: "#/components/parameters/enddate"
+        - $ref: "#/components/parameters/startdepth"
+        - $ref: "#/components/parameters/enddepth"
+        - $ref: "#/components/parameters/geometry"
+        - $ref: "#/components/parameters/redlist"
+        - $ref: "#/components/parameters/hab"
+        - $ref: "#/components/parameters/wrims"
+        - $ref: "#/components/parameters/exclude"
+        - $ref: "#/components/parameters/dropped"
+        - $ref: "#/components/parameters/absence"
+        - $ref: "#/components/parameters/event"
+        - $ref: "#/components/parameters/flags"
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+  /occurrence/point/{x}/{y}:
+    get:
+      summary: "Fetch point occurrences for a location (with Geohash precision 8) as GeoJSON."
+      description: "Fetch point occurrences for a location (with Geohash precision 8) as GeoJSON."
+      tags:
+        - Occurrence
+      parameters:
+        - $ref: "#/components/parameters/scientificname"
+        - $ref: "#/components/parameters/taxonid"
+        - $ref: "#/components/parameters/datasetid"
+        - $ref: "#/components/parameters/areaid"
+        - $ref: "#/components/parameters/instituteid"
+        - $ref: "#/components/parameters/nodeid"
+        - $ref: "#/components/parameters/startdate"
+        - $ref: "#/components/parameters/enddate"
+        - $ref: "#/components/parameters/startdepth"
+        - $ref: "#/components/parameters/enddepth"
+        - $ref: "#/components/parameters/geometry"
+        - $ref: "#/components/parameters/redlist"
+        - $ref: "#/components/parameters/hab"
+        - $ref: "#/components/parameters/wrims"
+        - $ref: "#/components/parameters/exclude"
+        - $ref: "#/components/parameters/dropped"
+        - $ref: "#/components/parameters/absence"
+        - $ref: "#/components/parameters/event"
+        - $ref: "#/components/parameters/flags"
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+  /occurrence/tile/{x}/{y}/{z}:
+    get:
+      summary: "Fetch point occurrences for a tile (aggregated using variable Geohash precision based on zoom level) as GeoJSON."
+      description: "Fetch point occurrences for a tile (aggregated using variable Geohash precision based on zoom level) as GeoJSON."
+      tags:
+        - Occurrence
+      parameters:
+        - $ref: "#/components/parameters/scientificname"
+        - $ref: "#/components/parameters/taxonid"
+        - $ref: "#/components/parameters/datasetid"
+        - $ref: "#/components/parameters/areaid"
+        - $ref: "#/components/parameters/instituteid"
+        - $ref: "#/components/parameters/nodeid"
+        - $ref: "#/components/parameters/startdate"
+        - $ref: "#/components/parameters/enddate"
+        - $ref: "#/components/parameters/startdepth"
+        - $ref: "#/components/parameters/enddepth"
+        - $ref: "#/components/parameters/geometry"
+        - $ref: "#/components/parameters/redlist"
+        - $ref: "#/components/parameters/hab"
+        - $ref: "#/components/parameters/wrims"
+        - $ref: "#/components/parameters/exclude"
+        - $ref: "#/components/parameters/dropped"
+        - $ref: "#/components/parameters/absence"
+        - $ref: "#/components/parameters/event"
+        - $ref: "#/components/parameters/flags"
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+  /occurrence/tile/{x}/{y}/{z}.mvt:
+    get:
+      summary: "Fetch gridded occurrences for a tile as MVT."
+      description: "Fetch gridded occurrences for a tile as MVT."
+      tags:
+        - Occurrence
+      parameters:
+        - $ref: "#/components/parameters/precision_query"
+        - $ref: "#/components/parameters/cellspertile"
+        - $ref: "#/components/parameters/tiletype"
+        - $ref: "#/components/parameters/margin"
+        - $ref: "#/components/parameters/taxonid"
+        - $ref: "#/components/parameters/datasetid"
+        - $ref: "#/components/parameters/areaid"
+        - $ref: "#/components/parameters/instituteid"
+        - $ref: "#/components/parameters/nodeid"
+        - $ref: "#/components/parameters/startdate"
+        - $ref: "#/components/parameters/enddate"
+        - $ref: "#/components/parameters/startdepth"
+        - $ref: "#/components/parameters/enddepth"
+        - $ref: "#/components/parameters/geometry"
+        - $ref: "#/components/parameters/redlist"
+        - $ref: "#/components/parameters/hab"
+        - $ref: "#/components/parameters/wrims"
+        - $ref: "#/components/parameters/exclude"
+        - $ref: "#/components/parameters/dropped"
+        - $ref: "#/components/parameters/absence"
+        - $ref: "#/components/parameters/event"
+        - $ref: "#/components/parameters/flags"
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+  /occurrence/point/{x}/{y}/{z}:
+    get:
+      summary: "Fetch point occurrences for a location (with variable Geohash precision based on zoom level) as GeoJSON."
+      description: "Fetch point occurrences for a location (with variable Geohash precision based on zoom level) as GeoJSON."
+      tags:
+        - Occurrence
+      parameters:
+        - $ref: "#/components/parameters/scientificname"
+        - $ref: "#/components/parameters/taxonid"
+        - $ref: "#/components/parameters/datasetid"
+        - $ref: "#/components/parameters/areaid"
+        - $ref: "#/components/parameters/instituteid"
+        - $ref: "#/components/parameters/nodeid"
+        - $ref: "#/components/parameters/startdate"
+        - $ref: "#/components/parameters/enddate"
+        - $ref: "#/components/parameters/startdepth"
+        - $ref: "#/components/parameters/enddepth"
+        - $ref: "#/components/parameters/geometry"
+        - $ref: "#/components/parameters/redlist"
+        - $ref: "#/components/parameters/hab"
+        - $ref: "#/components/parameters/wrims"
+        - $ref: "#/components/parameters/exclude"
+        - $ref: "#/components/parameters/dropped"
+        - $ref: "#/components/parameters/absence"
+        - $ref: "#/components/parameters/event"
+        - $ref: "#/components/parameters/flags"
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+  /occurrence/centroid:
+    get:
+      summary: "Determine the centroid for a selection of occurrence records."
+      description: "Determine the centroid for a selection of occurrence records."
+      tags:
+        - Occurrence
+      parameters:
+        - $ref: "#/components/parameters/scientificname"
+        - $ref: "#/components/parameters/taxonid"
+        - $ref: "#/components/parameters/datasetid"
+        - $ref: "#/components/parameters/areaid"
+        - $ref: "#/components/parameters/instituteid"
+        - $ref: "#/components/parameters/nodeid"
+        - $ref: "#/components/parameters/startdate"
+        - $ref: "#/components/parameters/enddate"
+        - $ref: "#/components/parameters/startdepth"
+        - $ref: "#/components/parameters/enddepth"
+        - $ref: "#/components/parameters/geometry"
+        - $ref: "#/components/parameters/redlist"
+        - $ref: "#/components/parameters/hab"
+        - $ref: "#/components/parameters/wrims"
+        - $ref: "#/components/parameters/exclude"
+        - $ref: "#/components/parameters/dropped"
+        - $ref: "#/components/parameters/absence"
+        - $ref: "#/components/parameters/event"
+        - $ref: "#/components/parameters/flags"
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+  /taxon/{id}:
+    get:
+      tags:
+        - Taxon
+      summary: "Get taxon records."
+      description: "Get taxon records."
+      parameters:
+        - $ref: "#/components/parameters/id_taxon"
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+  /taxon/{scientificname}:
+    get:
+      tags:
+        - Taxon
+      summary: "Get taxon records."
+      description: "Get taxon records."
+      parameters:
+        - $ref: "#/components/parameters/scientificname_path"
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+  /taxon/annotations:
+    get:
+      tags:
+        - Taxon
+      summary: "Get scientific name annotations by the WoRMS team."
+      description: "Get scientific name annotations by the WoRMS team."
+      parameters:
+        - $ref: "#/components/parameters/scientificname"
+  #/taxon:
+  #  get:
+  #    tags:
+  #      - Taxon
+  #    summary: "Find taxon records."
+  #    description: "Find taxon records."
+  #    parameters:
+  #      - $ref: "#/components/parameters/scientificname"
+  #      - $ref: "#/components/parameters/taxonid"
+  #      - $ref: "#/components/parameters/taxonrank"
+  #    responses:
+  #      200:
+  #        $ref: "#/components/responses/200"
+
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+  /checklist:
+    get:
+      tags:
+      - Checklist
+      summary: "Generate a checklist."
+      description: "Generate a checklist."
+      parameters:
+      - $ref: "#/components/parameters/scientificname"
+      - $ref: "#/components/parameters/taxonid"
+      - $ref: "#/components/parameters/areaid"
+      - $ref: "#/components/parameters/instituteid"
+      - $ref: "#/components/parameters/nodeid"
+      - $ref: "#/components/parameters/startdate"
+      - $ref: "#/components/parameters/enddate"
+      - $ref: "#/components/parameters/startdepth"
+      - $ref: "#/components/parameters/enddepth"
+      - $ref: "#/components/parameters/geometry"
+      - $ref: "#/components/parameters/redlist"
+      - $ref: "#/components/parameters/hab"
+      - $ref: "#/components/parameters/wrims"
+      - $ref: "#/components/parameters/flags"
+      - $ref: "#/components/parameters/exclude"
+      - $ref: "#/components/parameters/dropped"
+      - $ref: "#/components/parameters/absence"
+      - $ref: "#/components/parameters/flags"
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+  /checklist/redlist:
+    get:
+      tags:
+      - Checklist
+      summary: "Generate a checklist of IUCN Red List species."
+      description: "Generate a checklist of IUCN Red List species."
+      parameters:
+      - $ref: "#/components/parameters/scientificname"
+      - $ref: "#/components/parameters/taxonid"
+      - $ref: "#/components/parameters/areaid"
+      - $ref: "#/components/parameters/instituteid"
+      - $ref: "#/components/parameters/nodeid"
+      - $ref: "#/components/parameters/startdate"
+      - $ref: "#/components/parameters/enddate"
+      - $ref: "#/components/parameters/startdepth"
+      - $ref: "#/components/parameters/enddepth"
+      - $ref: "#/components/parameters/geometry"
+      - $ref: "#/components/parameters/flags"
+      - $ref: "#/components/parameters/exclude"
+      - $ref: "#/components/parameters/dropped"
+      - $ref: "#/components/parameters/absence"
+      - $ref: "#/components/parameters/flags"
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+  /checklist/newest:
+    get:
+      tags:
+      - Checklist
+      summary: "Generate a checklist of most recently added species."
+      description: "Generate a checklist of most recently added species."
+      parameters:
+      - $ref: "#/components/parameters/scientificname"
+      - $ref: "#/components/parameters/taxonid"
+      - $ref: "#/components/parameters/areaid"
+      - $ref: "#/components/parameters/instituteid"
+      - $ref: "#/components/parameters/nodeid"
+      - $ref: "#/components/parameters/startdate"
+      - $ref: "#/components/parameters/enddate"
+      - $ref: "#/components/parameters/startdepth"
+      - $ref: "#/components/parameters/enddepth"
+      - $ref: "#/components/parameters/geometry"
+      - $ref: "#/components/parameters/redlist"
+      - $ref: "#/components/parameters/hab"
+      - $ref: "#/components/parameters/wrims"
+      - $ref: "#/components/parameters/flags"
+      - $ref: "#/components/parameters/exclude"
+      - $ref: "#/components/parameters/dropped"
+      - $ref: "#/components/parameters/absence"
+      - $ref: "#/components/parameters/flags"
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+  /node/{id}:
+    get:
+      tags:
+      - Node
+      summary: "Get node records."
+      description: "Get node records."
+      parameters:
+      - $ref: "#/components/parameters/id_node"
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+  /node/{id}/activities:
+    get:
+      tags:
+      - Node
+      summary: "Get node activities."
+      description: "Get node activities."
+      parameters:
+      - $ref: "#/components/parameters/id_node"
+
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+  /dataset:
+    get:
+      tags:
+        - Dataset
+      summary: "Find dataset records."
+      description: "Find dataset records."
+      parameters:
+        - $ref: "#/components/parameters/scientificname"
+        - $ref: "#/components/parameters/taxonid"
+        - $ref: "#/components/parameters/areaid"
+        - $ref: "#/components/parameters/instituteid"
+        - $ref: "#/components/parameters/nodeid"
+        - $ref: "#/components/parameters/startdate"
+        - $ref: "#/components/parameters/enddate"
+        - $ref: "#/components/parameters/startdepth"
+        - $ref: "#/components/parameters/enddepth"
+        - $ref: "#/components/parameters/geometry"
+        - $ref: "#/components/parameters/redlist"
+        - $ref: "#/components/parameters/hab"
+        - $ref: "#/components/parameters/wrims"
+        - $ref: "#/components/parameters/flags"
+        - $ref: "#/components/parameters/exclude"
+        - $ref: "#/components/parameters/dropped"
+        - $ref: "#/components/parameters/absence"
+        - $ref: "#/components/parameters/flags"
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+  /dataset/{id}:
+    get:
+      tags:
+      - Dataset
+      summary: "Get dataset records."
+      description: "Get dataset records."
+      parameters:
+      - $ref: "#/components/parameters/id_dataset"
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+  /dataset/{id}/errors:
+    get:
+      tags:
+      - Dataset
+      summary: "Get dataset loading errors."
+      description: "Get dataset loading errors."
+      parameters:
+      - $ref: "#/components/parameters/id_dataset"
+
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+  /institute:
+    get:
+      tags:
+      - Institute
+      summary: "Find institute records."
+      description: "Find institute records."
+      parameters:
+      - $ref: "#/components/parameters/scientificname"
+      - $ref: "#/components/parameters/taxonid"
+      - $ref: "#/components/parameters/areaid"
+      - $ref: "#/components/parameters/datasetid"
+      - $ref: "#/components/parameters/nodeid"
+      - $ref: "#/components/parameters/startdate"
+      - $ref: "#/components/parameters/enddate"
+      - $ref: "#/components/parameters/startdepth"
+      - $ref: "#/components/parameters/enddepth"
+      - $ref: "#/components/parameters/geometry"
+      - $ref: "#/components/parameters/redlist"
+      - $ref: "#/components/parameters/hab"
+      - $ref: "#/components/parameters/wrims"
+      - $ref: "#/components/parameters/flags"
+      - $ref: "#/components/parameters/exclude"
+      - $ref: "#/components/parameters/dropped"
+      - $ref: "#/components/parameters/absence"
+      - $ref: "#/components/parameters/flags"
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+  /institute/{id}:
+    get:
+      tags:
+      - Institute
+      summary: "Get institute records."
+      description: "Get institute records."
+      parameters:
+      - $ref: "#/components/parameters/id_institute"
+
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+  /area:
+    get:
+      tags:
+      - Area
+      summary: "Find area records."
+      description: "Find area records."
+      parameters:
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+  /area/{id}:
+    get:
+      tags:
+      - Area
+      summary: "Get area records."
+      description: "Get area records."
+      parameters:
+      - $ref: "#/components/parameters/id_area"
+
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+  /country:
+    get:
+      tags:
+      - Country
+      summary: "Find country records."
+      description: "Find country records."
+      parameters:
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+  /country/{id}:
+    get:
+      tags:
+      - Country
+      summary: "Get country records."
+      description: "Get country records."
+      parameters:
+      - $ref: "#/components/parameters/id_country"
+
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+  /facet:
+    get:
+      tags:
+        - Facet
+      summary: "Get record counts for one or more facets."
+      description: "Get record counts for one or more facets."
+      parameters:
+        - $ref: "#/components/parameters/facets"
+        - $ref: "#/components/parameters/composite"
+        - $ref: "#/components/parameters/scientificname"
+        - $ref: "#/components/parameters/taxonid"
+        - $ref: "#/components/parameters/areaid"
+        - $ref: "#/components/parameters/datasetid"
+        - $ref: "#/components/parameters/nodeid"
+        - $ref: "#/components/parameters/startdate"
+        - $ref: "#/components/parameters/enddate"
+        - $ref: "#/components/parameters/startdepth"
+        - $ref: "#/components/parameters/enddepth"
+        - $ref: "#/components/parameters/geometry"
+        - $ref: "#/components/parameters/redlist"
+        - $ref: "#/components/parameters/hab"
+        - $ref: "#/components/parameters/wrims"
+        - $ref: "#/components/parameters/dropped"
+        - $ref: "#/components/parameters/absence"
+        - $ref: "#/components/parameters/flags"
+        - $ref: "#/components/parameters/exclude"
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+  /statistics:
+    get:
+      tags:
+        - Statistics
+      summary: "Get basic statistics for occurrence records."
+      description: "Get basic statistics for occurrence records."
+      parameters:
+        - $ref: "#/components/parameters/scientificname"
+        - $ref: "#/components/parameters/taxonid"
+        - $ref: "#/components/parameters/areaid"
+        - $ref: "#/components/parameters/datasetid"
+        - $ref: "#/components/parameters/nodeid"
+        - $ref: "#/components/parameters/startdate"
+        - $ref: "#/components/parameters/enddate"
+        - $ref: "#/components/parameters/startdepth"
+        - $ref: "#/components/parameters/enddepth"
+        - $ref: "#/components/parameters/geometry"
+        - $ref: "#/components/parameters/redlist"
+        - $ref: "#/components/parameters/hab"
+        - $ref: "#/components/parameters/wrims"
+        - $ref: "#/components/parameters/dropped"
+        - $ref: "#/components/parameters/absence"
+        - $ref: "#/components/parameters/flags"
+        - $ref: "#/components/parameters/exclude"
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+  /statistics/years:
+    get:
+      tags:
+        - Statistics
+      summary: "Get number of presence records per year."
+      description: "Get number of presence records per year."
+      parameters:
+        - $ref: "#/components/parameters/scientificname"
+        - $ref: "#/components/parameters/taxonid"
+        - $ref: "#/components/parameters/areaid"
+        - $ref: "#/components/parameters/datasetid"
+        - $ref: "#/components/parameters/nodeid"
+        - $ref: "#/components/parameters/startdate"
+        - $ref: "#/components/parameters/enddate"
+        - $ref: "#/components/parameters/startdepth"
+        - $ref: "#/components/parameters/enddepth"
+        - $ref: "#/components/parameters/geometry"
+        - $ref: "#/components/parameters/redlist"
+        - $ref: "#/components/parameters/hab"
+        - $ref: "#/components/parameters/wrims"
+        - $ref: "#/components/parameters/dropped"
+        - $ref: "#/components/parameters/absence"
+        - $ref: "#/components/parameters/flags"
+        - $ref: "#/components/parameters/exclude"
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+  /statistics/env:
+    get:
+      tags:
+        - Statistics
+      summary: "Get number of records per SST, SSS or depth bin."
+      description: "Get number of records per SST, SSS or depth bin."
+      parameters:
+        - $ref: "#/components/parameters/scientificname"
+        - $ref: "#/components/parameters/taxonid"
+        - $ref: "#/components/parameters/areaid"
+        - $ref: "#/components/parameters/datasetid"
+        - $ref: "#/components/parameters/nodeid"
+        - $ref: "#/components/parameters/startdate"
+        - $ref: "#/components/parameters/enddate"
+        - $ref: "#/components/parameters/startdepth"
+        - $ref: "#/components/parameters/enddepth"
+        - $ref: "#/components/parameters/geometry"
+        - $ref: "#/components/parameters/redlist"
+        - $ref: "#/components/parameters/hab"
+        - $ref: "#/components/parameters/wrims"
+        - $ref: "#/components/parameters/dropped"
+        - $ref: "#/components/parameters/absence"
+        - $ref: "#/components/parameters/flags"
+        - $ref: "#/components/parameters/exclude"
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+  /statistics/qc:
+    get:
+      tags:
+        - Statistics
+      summary: "Get a QC summary, including missing or invalid values, number of records on land, number of non marine records and number of records without Aphia ID."
+      description: "Get a QC summary, including missing or invalid values, number of records on land, number of non marine records and number of records without Aphia ID."
+      parameters:
+        - $ref: "#/components/parameters/scientificname"
+        - $ref: "#/components/parameters/taxonid"
+        - $ref: "#/components/parameters/areaid"
+        - $ref: "#/components/parameters/datasetid"
+        - $ref: "#/components/parameters/nodeid"
+        - $ref: "#/components/parameters/startdate"
+        - $ref: "#/components/parameters/enddate"
+        - $ref: "#/components/parameters/startdepth"
+        - $ref: "#/components/parameters/enddepth"
+        - $ref: "#/components/parameters/geometry"
+        - $ref: "#/components/parameters/redlist"
+        - $ref: "#/components/parameters/hab"
+        - $ref: "#/components/parameters/wrims"
+        - $ref: "#/components/parameters/dropped"
+        - $ref: "#/components/parameters/absence"
+        - $ref: "#/components/parameters/flags"
+        - $ref: "#/components/parameters/exclude"
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+  /statistics/composition:
+    get:
+      tags:
+        - Statistics
+      summary: "Get an overview of taxonomic composition."
+      description: "Get an overview of taxonomic composition."
+      parameters:
+        - $ref: "#/components/parameters/scientificname"
+        - $ref: "#/components/parameters/taxonid"
+        - $ref: "#/components/parameters/areaid"
+        - $ref: "#/components/parameters/datasetid"
+        - $ref: "#/components/parameters/nodeid"
+        - $ref: "#/components/parameters/startdate"
+        - $ref: "#/components/parameters/enddate"
+        - $ref: "#/components/parameters/startdepth"
+        - $ref: "#/components/parameters/enddepth"
+        - $ref: "#/components/parameters/geometry"
+        - $ref: "#/components/parameters/redlist"
+        - $ref: "#/components/parameters/hab"
+        - $ref: "#/components/parameters/wrims"
+        - $ref: "#/components/parameters/dropped"
+        - $ref: "#/components/parameters/absence"
+        - $ref: "#/components/parameters/flags"
+        - $ref: "#/components/parameters/exclude"
+      responses:
+        200:
+          $ref: "#/components/responses/200"
+  /statistics/outliers:
+    get:
+      tags:
+        - Statistics
+      summary: "Get SST and SSS distribution quartiles."
+      description: "Get SST and SSS distribution quartiles."
+      parameters:
+        - $ref: "#/components/parameters/scientificname"
+        - $ref: "#/components/parameters/taxonid"
+        - $ref: "#/components/parameters/areaid"
+        - $ref: "#/components/parameters/datasetid"
+        - $ref: "#/components/parameters/nodeid"
+        - $ref: "#/components/parameters/startdate"
+        - $ref: "#/components/parameters/enddate"
+        - $ref: "#/components/parameters/startdepth"
+        - $ref: "#/components/parameters/enddepth"
+        - $ref: "#/components/parameters/geometry"
+        - $ref: "#/components/parameters/redlist"
+        - $ref: "#/components/parameters/hab"
+        - $ref: "#/components/parameters/wrims"
+        - $ref: "#/components/parameters/dropped"
+        - $ref: "#/components/parameters/absence"
+        - $ref: "#/components/parameters/flags"
+        - $ref: "#/components/parameters/exclude"
