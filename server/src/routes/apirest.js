@@ -2,6 +2,7 @@
 import S from 'fluent-json-schema'
 //import { stringify } from 'JSONStream' //stringifyObject
 import { Readable } from 'node:stream' //Transform, PassThrough
+import { finished } from 'stream/promises'
 //import fastJson from 'fast-json-stringify'
 //import Sequelize from 'sequelize'
 //import parser from 'stream-json'
@@ -345,9 +346,14 @@ str(speed, 8, 3) as "Speed(m/s)"
       // 202207: addd dep_mode for depth ('range', 'mean', 'exact': use only dep0)
       let dep_mode = 'NULL'
       if (typeof qstr.dep_mode !== 'undefined') {
-        dep_mode = qstr.dep_mode.toLowerCase()
-        if (dep_mode !== 'range' && dep_mode !== 'mean' && dep_mode !== 'exact') {
-          dep_mode = 'NULL'
+        if (keyx==='ctd' && Number.isInteger(Number(qstr.dep_mode)) && Number(qstr.dep_mode) > 0) {
+          dep_mode = qstr.dep_mode //Note if parseInt(qstr.dep_mode) < 5, in SQl, it will be converted to default 10m
+          // ....................... (but only in CTD mode) and in SQL, dep0, dep1, dep_mode NULL, auto-converted to 10m, too 
+        } else {
+          dep_mode = qstr.dep_mode.toLowerCase()
+          if (dep_mode !== 'range' && dep_mode !== 'mean' && dep_mode !== 'exact') {
+            dep_mode = 'NULL'
+          }
         }
       }
       /*let mean = true //20220518 modified stored procedure in SQL SERVER that parameter 'mean' is replaced by mode
@@ -696,6 +702,14 @@ str(speed, 8, 3) as "Speed(m/s)"
     //reply.header('Content-Type', 'application/stream+json')
     //reply.type('application/json')
     await pipex(stream, reply)
+    //https://www.mariokandut.com/how-to-handle-streams-errors-in-node-js/
+    //but not for sure it works or not??
+    async function run_fs() {
+      await finished(stream);
+      fastify.log.info('Stream is done reading...');
+    }
+    run_fs().catch(fastify.log.error);
+
     next()
     } //end of not-cached else
   }
