@@ -23,7 +23,7 @@ const configSecServ = async (certDir='config') => {
 }
 
 const startServer = async () => {
-  const PORT = process.env.PORT || 3000;
+  const PORT = 3023 //process.env.PORT || 3000
   const {key, cert, allowHTTP1} = await configSecServ()
   const fastify = Fastify({
       http2: true,
@@ -44,8 +44,8 @@ const startServer = async () => {
     //debug: true
     },
     schema: S.object()
-      .prop('COOKIE_SECRET', S.string().required())
-      .prop('MONGO_CONNECT', S.string().required())
+      //.prop('COOKIE_SECRET', S.string().required())
+      //.prop('MONGO_CONNECT', S.string().required())
       .prop('SQLSERVER', S.string().required())
       .prop('SQLPORT', S.integer().required())
       .prop('SQLDBNAME', S.string().required())
