@@ -33,6 +33,7 @@ str(speed, 8, 3) as "Speed(m/s)"
 */
 //ref: https://stackoverflow.com/questions/52987837/nodejs-unable-to-import-sequelize-js-model-es6
   const limited_yrs = 3 //for CTD, SADCP, cannot reveal last 3 yrs data
+  const limited_row = 100 // for raw file limitation
   const grd15moa = deg => { return(parseInt((deg-0.125) / 0.25) * 0.25 + 0.25) } //gridded to 0.25-degree = 15 minute of arc
 
   const grdMissingVal = (res, xmin, grdx, grdy, curx, cury, gcnt, gi, gj, ix, iy, nx, tp) => {
@@ -288,8 +289,7 @@ str(speed, 8, 3) as "Speed(m/s)"
       if (typeof qstr.start == 'undefined' && typeof qstr.end == 'undefined') {
         allspan_avg_flag = 2
         qkey = qkey + start + '_NA'
-        start = `"${start}"`
-        end = `"${end}"`
+        start = `"${start}"` //end='NULL' default
       } else {
         if (typeof qstr.start !== 'undefined') {
           if (/^\d+\.?\d*$/.test(qstr.start) && qstr.start.length===8) {
@@ -335,7 +335,7 @@ str(speed, 8, 3) as "Speed(m/s)"
         end = `"${end}"`
       }
 
-      let limit = 'NULL'
+      let limit = 0
       if (typeof qstr.limit !== 'undefined') {
         if (Number.isInteger(Number(qstr.limit)) && Number(qstr.limit) > 0) {
           limit = parseInt(qstr.limit)
@@ -359,7 +359,7 @@ str(speed, 8, 3) as "Speed(m/s)"
       /*let mean = true //20220518 modified stored procedure in SQL SERVER that parameter 'mean' is replaced by mode
         let mode = (qstr.mode??'average').toLowerCase() //'raw', may transfer huge data
         if (mode === 'raw' ) { mean = false } */
-      // 202207: add raw0: means real raw data; raw1: gridded raw data but all limit 1000
+      // 202207: add raw0: means real raw data; raw1: gridded raw data but all limit 1000/limited_row
       let mode = 'NULL'
       let period = [0]
       if (typeof qstr.mode !== 'undefined') {
@@ -371,7 +371,7 @@ str(speed, 8, 3) as "Speed(m/s)"
         } else if (mode === 'month') {
           period = [1,2,3,4,5,6,7,8,9,10,11,12]
         } else if (/^raw/.test(mode)) { //(mode === 'raw') {
-          if (limit === 'NULL' || limit >= 1000) { limit = 1000 }
+          limit = limited_row
         } else {
           if (Number.isInteger(Number(qstr.mode))) {
             //fastify.log.info("Mode is integer!" + qstr.mode)
@@ -415,7 +415,7 @@ str(speed, 8, 3) as "Speed(m/s)"
           if (dep_mode === 'NULL' || /range/.test(dep_mode)) {
             dep_mode = 'mean';  //cannot be multiple values for depth in uvgrid format
           }
-          limit = 'NULL'
+          limit = 0
           yorder = -2 //must DESC, and ordered by lat, lon
           xorder = 1  //must increasing
           //fastify.log.info("Test UVgrid mode: " + mode + " with period: " + JSON.stringify(period))
@@ -491,7 +491,7 @@ str(speed, 8, 3) as "Speed(m/s)"
       } else {
         qkey = qkey + '_' + yorder.toString()
       }
-      qkey = qkey + '_' + mean_threshold.toString() + '_' + lon0.toString() + '_' + lon1.toString() +
+      qkey = qkey + '_' + limit.toString() + '_' + mean_threshold.toString() + '_' + lon0.toString() + '_' + lon1.toString() +
              '_' + lat0.toString() + '_' + lat1.toString() + '_' + dep0.toString() + '_' + dep1.toString()
     //fastify.log.info(keyx + "Query key is: " + qkey)
     //fastify.log.info(keyx + "Query command is: " + qry)
