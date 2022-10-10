@@ -9,7 +9,8 @@ import { finished } from 'stream/promises'
 //import streamArray from 'stream-json/streamers/StreamArray'
 //import zlib from 'zlib';
 
-export const autoPrefix = process.env.NODE_ENV === 'production'? '/api' : '/apitest'
+//export const autoPrefix = process.env.NODE_ENV === 'production'? '/api' : '/apitest'
+export const autoPrefix = '/api'
 
 export default async function apirest (fastify, opts, next) {
 /* sadcp data looks like
