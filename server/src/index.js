@@ -11,19 +11,19 @@ import apiConf from './config/swagger_config.js'
 const configSecServ = async (certDir='config') => {
   const readCertFile = (filename) => {
     return readFileSync(join(import.meta.url, certDir, filename))
-  };
+  }
   try {
     const [key, cert] = await Promise.all(
-      [readCertFile('privkey.pem'), readCertFile('fullchain.pem')]);
-    return {key, cert, allowHTTP1: true};
+      [readCertFile('privkey.pem'), readCertFile('fullchain.pem')])
+    return {key, cert, allowHTTP1: true}
   } catch (err) {
-    console.log('Error: certifite failed. ' + err);
-    process.exit(1);
+    console.log('Error: certifite failed. ' + err)
+    process.exit(1)
   }
 }
 
 const startServer = async () => {
-  const PORT = 3023 //process.env.PORT || 3000
+  const PORT = 3023
   const {key, cert, allowHTTP1} = await configSecServ()
   const fastify = Fastify({
       http2: true,
@@ -41,11 +41,8 @@ const startServer = async () => {
   fastify.register(Env, {
     dotenv: {
       path: join(import.meta.url, 'config/.env'),
-    //debug: true
     },
     schema: S.object()
-      //.prop('COOKIE_SECRET', S.string().required())
-      //.prop('MONGO_CONNECT', S.string().required())
       .prop('SQLSERVER', S.string().required())
       .prop('SQLPORT', S.integer().required())
       .prop('SQLDBNAME', S.string().required())
@@ -53,13 +50,22 @@ const startServer = async () => {
       .prop('SQLPASS', S.string().required())
       .prop('TABLE_CTD', S.string().required())
       .prop('TABLE_SADCP', S.string().required())
+      .prop('DOMAIN', S.string().required())
+      .prop('BIOQRY_HOST', S.string().required())
+      .prop('BIOQRY_BASE', S.string().required())
+      .prop('BIOQRY_GETBIO', S.string().required())
+      .prop('BIOUSER', S.string().required())
+      .prop('BIODB_HOST', S.string().required())
+      .prop('BIODB', S.string().required())
+      .prop('FISHDB_HOST', S.string().required())
+      .prop('FISHDB', S.string().required())
       .valueOf()
   }).ready((err) => {
-    if (err) console.error(err) //console.log(fastify.config)
+    if (err) console.error(err)
   })
 
   fastify.register(Swagger, apiConf)
-  fastify.register(srvapp) //old: use fastify-mongodb, but not work used in graphql resolvers
+  fastify.register(srvapp)
 
   fastify.listen({ port: PORT }, function (err, address) {
     if (err) {

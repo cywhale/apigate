@@ -5,7 +5,7 @@
 	"description": "ODB API gate",
 	"main": "index.js",
 	"scripts": {
-		"start": "export NODE_OPTIONS=--max_old_space_size=8192 && node --es-module-specifier-resolution=node ./src/index.js",
+		"start": "export NODE_OPTIONS=--max_old_space_size=8192 && nodemon --es-module-specifier-resolution=node ./src/index.js",
 		"dev": "export NODE_OPTIONS=--max_old_space_size=8192 && nodemon --es-module-specifier-resolution=node ./src/index.js",
 		"prod": "export NODE_OPTIONS=--max_old_space_size=8192 && export NODE_ENV=production && nodemon --es-module-specifier-resolution=node ./src/index.js"
 	},
@@ -26,9 +26,11 @@
 		"fastify": "^4.8.1",
 		"fastify-plugin": "^4.2.1",
 		"fluent-json-schema": "^4.0.0",
+		"formdata-node": "^5.0.0",
 		"fs": "^0.0.2",
 		"knex": "^2.3.0",
 		"lru-cache": "^7.14.0",
+		"node-fetch": "^3.2.10",
 		"tedious": "^15.1.0"
 	},
 	"devDependencies": {
