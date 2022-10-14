@@ -720,7 +720,7 @@ str(speed, 8, 3) as "Speed(m/s)"
     method: ['GET'],
     schema: {
       description: 'ODB SADCP API',
-      tags: ['sadcp'],
+      tags: ['SADCP'],
       querystring: {
         type: "object",
         properties: {
@@ -764,7 +764,7 @@ str(speed, 8, 3) as "Speed(m/s)"
 /*
   fastify.get('/sadcp', {
     schema: {
-      tags: ['sadcp'],
+      tags: ['SADCP'],
       query: {
           properties: {
             lon0: { type: 'number' },
@@ -865,7 +865,7 @@ Order by [GMT+8],longitude_degree,latitude_degree
     method: ['GET'],
     schema: {
       description: 'ODB CTD API',
-      tags: ['ctd'],
+      tags: ['CTD'],
       querystring: {
         type: "object",
         properties: {

@@ -1,10 +1,9 @@
 import AutoLoad from '@fastify/autoload'
 import Cors from '@fastify/cors'
 import { join } from 'desm'
-//import mercurius from 'mercurius'
-//import db from './config/db'
-//import schema from './graphql/schema'
-//import resolvers from './graphql/resolvers'
+import mercurius from 'mercurius'
+import schema from './graphql/schema'
+import resolvers from './graphql/resolvers'
 import fs from 'fs'
 import { Readable } from 'node:stream'
 
@@ -12,20 +11,17 @@ export default async function (fastify, opts, next) {
   fastify.decorate('conf', {
     node_env: process.env.NODE_ENV || 'development',
     port: 3023 //process.env.PORT || 3000,
-    //devTestPort: 3003,
-    //sessiondir: process.env.NODE_ENV === 'production'? '/session' : '/sessioninfo'
   })
 
 //fastify.register(db, { url: fastify.config.MONGO_CONNECT }) //use mongoose
-/*
   fastify.register(mercurius, {
         schema: schema,
         resolvers: resolvers,
-        graphiql: true, //'playground', //has been removed from mercuius issue #453
+        graphiql: true,
         jit: 1,
-        queryDepth: 11
+        //queryDepth: 11
   })
-*/
+
   fastify.register(import('./config/knexconn.js'), {
     knexOptions: {
       client: 'mssql',
@@ -190,12 +186,12 @@ export default async function (fastify, opts, next) {
       callback(null, corsOptions)
     }
   })
-/*
+
   fastify.register(AutoLoad, {
     dir: join(import.meta.url, 'plugins'),
     options: Object.assign({}, opts)
   })
-*/
+
   fastify.register(AutoLoad, {
     dir: join(import.meta.url, 'routes'),
     dirNameRoutePrefix: false,
