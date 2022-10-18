@@ -19,7 +19,7 @@ const streamToString = async (stream) => {
     return Buffer.concat(chunks).toString("utf-8")
 }
 
-const fetchBio = (spname, grid, url, user, host, db) => {
+const fetchBio = (spname, url, user, host, db, grid=0, level=true, append=true) => {
     //const url = `${fastify.config.BIOQRY_HOST}/${fastify.config.BIOQRY_BASE}/${fastify.config.BIOQRY_GETBIO}`
     let formData = new FormData()
     formData.append("dbuser", `\"${user}\"`) //fastify.config.BIOUSER,
@@ -32,8 +32,8 @@ const fetchBio = (spname, grid, url, user, host, db) => {
       formData.append("grd_sel", grid) //if not append, i.e. pass NA to BioQuery
     }
     //formData.append("value_unit", `\"perm3\"`) //occurrence, so don't care abundance
-    formData.append("taxon_lvl", '\"species\"')  //restrict searching for species (e.g. not all copepods)
-    formData.append("appends", `\"all\"`)
+    if (level) { formData.append("taxon_lvl", '\"species\"') } //restrict searching for species (e.g. not all copepods)
+    if (append) { formData.append("appends", `\"all\"`) }
 
     return fetch(url, {
         method: 'POST',

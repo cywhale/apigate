@@ -6,6 +6,7 @@ import S from 'fluent-json-schema'
 import { join } from 'desm'
 import srvapp from './srvapp.js'
 import Swagger from '@fastify/swagger'
+import SwaggerUI from '@fastify/swagger-ui'
 import apiConf from './config/swagger_config.js'
 
 const configSecServ = async (certDir='config') => {
@@ -54,6 +55,7 @@ const startServer = async () => {
       .prop('BIOQRY_HOST', S.string().required())
       .prop('BIOQRY_BASE', S.string().required())
       .prop('BIOQRY_GETBIO', S.string().required())
+      .prop('BIOQRY_GETSCI', S.string().required())
       .prop('BIOUSER', S.string().required())
       .prop('BIODB_HOST', S.string().required())
       .prop('BIODB', S.string().required())
@@ -64,15 +66,16 @@ const startServer = async () => {
     if (err) console.error(err)
   })
 
-  fastify.register(Swagger, apiConf)
-  fastify.register(srvapp)
+  await fastify.register(Swagger)
+  await fastify.register(SwaggerUI, apiConf)
+  await fastify.register(srvapp)
 
   fastify.listen({ port: PORT }, function (err, address) {
     if (err) {
       fastify.log.error(err)
       process.exit(1)
     }
-    fastify.swagger()
+    //fastify.swagger()
     fastify.log.info(`server listening on ${address}`)
   })
 }

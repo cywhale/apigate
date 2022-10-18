@@ -1,6 +1,7 @@
 const schema = `
 type Query {
-     occurrence(sp: String!, grid: Int): [DarwinCore]
+     occurrence(sp: String!, grid: Int): [DarwinOcc]
+     taxonomy(sp: String!): [DarwinTaxon]
 }
 
 type TaxaData {
@@ -21,7 +22,7 @@ type TaxaData {
     cite_abbrev: String
 }
 
-type DarwinCore {
+type DarwinOcc {
     decimalLongitude: Float!,
     decimalLatitude: Float!,
     scientificName: String!,
@@ -34,6 +35,18 @@ type DarwinCore {
     eventTime: String,
     occurrenceID: String,
     bibliographicCitation: String
+}
+
+type DarwinTaxon {
+    scientificName: String!,
+    taxonRank: String,
+    kingdom: String,
+    phylum: String,
+    class: String,
+    order: String,
+    family: String,
+    genus: String,
+    specificEpithet:String
 }
 `
 export default schema

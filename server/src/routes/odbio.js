@@ -1,4 +1,6 @@
 import S from 'fluent-json-schema'
+import { FormData } from 'formdata-node'
+import fetch from 'node-fetch'
 
 export const autoPrefix = '/api'
 
@@ -38,7 +40,7 @@ export default async function odbio (fastify, opts, next) {
     }
   }`
 
-  const darwinCoreSchema = S.object()
+  const darwinOccSchema = S.object()
     .id('#darwinoccjson')
     .description('Occurrence ok (in JSON)')
     .prop("data", S.object()
@@ -81,7 +83,7 @@ export default async function odbio (fastify, opts, next) {
         }
       },
       response: {
-        200: darwinCoreSchema
+        200: darwinOccSchema
       }
     }
   }, async (req, reply) => {
@@ -94,6 +96,59 @@ export default async function odbio (fastify, opts, next) {
     let gridx = req.query.grid??0
     //fastify.log.info("Go to fetch: " + spname + " with gridded: " + gridx)
     return reply.graphql(occqry, null, {sp: spname, grid: gridx})
+  })
+
+
+  const taxqry = `query ($sp: String!) {
+    taxonomy(sp: $sp)
+    {
+      scientificName
+      taxonRank
+      kingdom
+      phylum
+      class
+      order
+      family
+      genus
+      specificEpithet
+    }
+  }`
+
+  const darwinTaxonSchema = S.object()
+    .id('#darwintaxonjson')
+    .description('Taxonomy ok (in JSON)')
+    .prop("data", S.object()
+      .prop("taxonomy", S.array().items(S.object()
+        .prop("scientificName", S.string())
+        .prop("taxonRank", S.string())
+        .prop("kingdom", S.string().raw({ nullable: true }))
+        .prop("phylum", S.string().raw({ nullable: true }))
+        .prop("class", S.string().raw({ nullable: true }))
+        .prop("order", S.string().raw({ nullable: true }))
+        .prop("family", S.string().raw({ nullable: true }))
+        .prop("genus", S.string().raw({ nullable: true }))
+        .prop("specificEpithet", S.string().raw({ nullable: true }))
+    )))
+
+
+  fastify.get('/taxonomy/:name', {
+    schema: {
+      description: 'Taxonomy of species in ODB Bio-database',
+      tags: ['Taxonomy'],
+      params: nameSchemaObj,
+      response: {
+        200: darwinTaxonSchema
+      }
+    }
+  }, async (req, reply) => {
+    let spname = decodeURIComponent(req.params.name) // Sp A, Sp B, Sp C -> '[\"Sp A\",\"Sp B\",\"Sp C\"]'
+    if (spname.indexOf(",") >= 0) {
+      spname = `[\"` + spname.replace(/,\s*/g, `\",\"`) + `\"]`
+    } else {
+      spname = `\"${spname}\"`
+    }
+    //fastify.log.info("Go to fetch: " + spname)
+    return reply.graphql(taxqry, null, {sp: spname})
   })
 
   next()

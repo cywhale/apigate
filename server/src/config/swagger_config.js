@@ -6,7 +6,7 @@
 const apiConf = {
 //fastify.register(Swagger,  {
     routePrefix: '/api',
-    exposeRoute: true,
+    //exposeRoute: true, //removed after swagger-ui indep of fastify/swagger
     hideUntagged: true,
     swagger: {
       info: {
