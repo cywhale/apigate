@@ -19,6 +19,8 @@ export default async function (fastify, opts, next) {
         resolvers: resolvers,
         graphiql: true,
         jit: 1,
+        //federationMetadata: true,
+        path: '/gql'
         //queryDepth: 11
   })
 

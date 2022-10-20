@@ -9,6 +9,10 @@ async function cacheHandler (fastify, opts) {
         occurrence: {
           ttl: 60 * 60 * 24,
           storage: { type: 'memory' }
+        },
+        taxonomy: {
+          ttl: 60 * 60 * 24,
+          storage: { type: 'memory' }
         }
       }
     },

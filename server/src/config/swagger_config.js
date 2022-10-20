@@ -5,7 +5,6 @@
 //async function apiSwaggerConf(fastify, opts, done) {
 const apiConf = {
 //fastify.register(Swagger,  {
-    routePrefix: '/api',
     //exposeRoute: true, //removed after swagger-ui indep of fastify/swagger
     hideUntagged: true,
     swagger: {
@@ -26,18 +25,21 @@ const apiConf = {
       schemes: ['https'],
       consumes: ['application/json'],
       produces: ['application/json'],
-    /*tags: [
-        { name: 'sadcp', description: 'ODB SADCP API' },
-        { name: 'ctd', description: 'ODB CTD API' }
-      ]*/
     },
+//} //https://github.com/fastify/fastify-swagger/issues/191
+}
+
+export const uiConf = {
+    routePrefix: '/api',
+    staticCSP: true,
+    transformStaticCSP: (header) => header,
     uiConfig: {
       validatorUrl: null,
       docExpansion: 'list', //'full'
       deepLinking: false
     }
-//} //https://github.com/fastify/fastify-swagger/issues/191
 }
+
 export default apiConf
 /*
 export default fp(apiSwaggerConf, {

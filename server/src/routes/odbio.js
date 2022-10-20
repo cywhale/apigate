@@ -2,7 +2,7 @@ import S from 'fluent-json-schema'
 import { FormData } from 'formdata-node'
 import fetch from 'node-fetch'
 
-export const autoPrefix = '/api'
+export const autoPrefix = '/bio'
 
 export default async function odbio (fastify, opts, next) {
 //return general json

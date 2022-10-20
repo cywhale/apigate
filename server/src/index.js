@@ -7,7 +7,7 @@ import { join } from 'desm'
 import srvapp from './srvapp.js'
 import Swagger from '@fastify/swagger'
 import SwaggerUI from '@fastify/swagger-ui'
-import apiConf from './config/swagger_config.js'
+import apiConf, { uiConf } from './config/swagger_config.js'
 
 const configSecServ = async (certDir='config') => {
   const readCertFile = (filename) => {
@@ -66,8 +66,8 @@ const startServer = async () => {
     if (err) console.error(err)
   })
 
-  await fastify.register(Swagger)
-  await fastify.register(SwaggerUI, apiConf)
+  await fastify.register(Swagger, apiConf)
+  await fastify.register(SwaggerUI, uiConf)
   await fastify.register(srvapp)
 
   fastify.listen({ port: PORT }, function (err, address) {

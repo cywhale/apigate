@@ -36,6 +36,7 @@ const toDarwinTaxonRow = row => {
 
 const resolvers = {
   Query: {
+    //test: async (_, { x, y }) => x + y,
     occurrence: async (_, obj, ctx) => {
       const { sp, grid } = obj
       const url = `${ctx.app.config.BIOQRY_HOST}/${ctx.app.config.BIOQRY_BASE}/${ctx.app.config.BIOQRY_GETBIO}`
@@ -61,7 +62,9 @@ const resolvers = {
       const { sp } = obj
       const url = `${ctx.app.config.BIOQRY_HOST}/${ctx.app.config.BIOQRY_BASE}/${ctx.app.config.BIOQRY_GETSCI}`
       const data = await fetchBio(sp, url, ctx.app.config.BIOUSER, ctx.app.config.BIODB_HOST, ctx.app.config.BIODB, -1, false, false)
-      let dt = JSON.parse(data.replace(/[\r\n]/gm, ''))
+      let jdt = data.replace(/[\r\n]/gm, '')
+      //ctx.app.log.info("Data: "+jdt)
+      let dt = JSON.parse(jdt)
       let chunks = []
       for (const chunk of dt) {
         chunks.push(toDarwinTaxonRow(chunk))
