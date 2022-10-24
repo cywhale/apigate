@@ -32,7 +32,6 @@ type DarwinOcc {
     measurementValue: Int,
     measurementUnit: String,
     eventDate: String,
-    eventTime: String,
     occurrenceID: String,
     bibliographicCitation: String
 }

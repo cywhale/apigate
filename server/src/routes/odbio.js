@@ -34,7 +34,6 @@ export default async function odbio (fastify, opts, next) {
       measurementValue
       measurementUnit
       eventDate
-      eventTime
       occurrenceID
       bibliographicCitation
     }
@@ -54,7 +53,7 @@ export default async function odbio (fastify, opts, next) {
         .prop("measurementValue", S.integer())
         .prop("measurementUnit", S.string())
         .prop("eventDate", S.string())
-        .prop("eventTime", S.string())
+        //.prop("eventTime", S.string()) //toISOString() to eventDate
         .prop("occurrenceID", S.string())
         .prop("bibliographicCitation", S.string())
     )))
