@@ -7,11 +7,11 @@ async function cacheHandler (fastify, opts) {
     policy: {
       Query: {
         occurrence: {
-          ttl: 60 * 60 * 24,
+          ttl: 60 * 60 * 5,
           storage: { type: 'memory' }
         },
         taxonomy: {
-          ttl: 60 * 60 * 24,
+          ttl: 60 * 60 * 5,
           storage: { type: 'memory' }
         }
       }

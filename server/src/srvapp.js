@@ -25,6 +25,7 @@ export default async function (fastify, opts, next) {
   })
 
   fastify.register(import('./config/knexconn.js'), {
+    knexName: 'sqldb',
     knexOptions: {
       client: 'mssql',
       connection: {
