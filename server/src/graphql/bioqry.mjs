@@ -1,5 +1,5 @@
 import { FormData } from 'formdata-node'
-import fetch from 'node-fetch'
+//import fetch from 'node-fetch' //remove after NodeJS v18
 
 //export const autoPrefix = '/raw/bioqry'
 //export default async function bioqry (fastify, opts, next) {
@@ -37,7 +37,7 @@ const fetchBio = (spname, url, user, host, db, grid=0, level=true, append=true) 
 
     return fetch(url, {
         method: 'POST',
-        mode: 'same-site',
+        mode: 'same-origin',
         redirect: 'follow',
         //credentials: 'include',
         //withCredentials: true,

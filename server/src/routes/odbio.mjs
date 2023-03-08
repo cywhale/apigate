@@ -1,6 +1,6 @@
 import S from 'fluent-json-schema'
 import { FormData } from 'formdata-node'
-import fetch from 'node-fetch'
+//import fetch from 'node-fetch' //remove after Nodejs v18
 
 export const autoPrefix = '/bio'
 

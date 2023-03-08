@@ -465,11 +465,11 @@ str(speed, 8, 3) as "Speed(m/s)"
       let qry = `USE [${fastify.config.SQLDBNAME}];
                  EXEC [dbo].`
       if (allspan_avg_flag==2) {
-        //fastify.log.info("Note: Only query stored mean-field table by sadcpavg procedure!")
+        fastify.log.info("Note: Only query stored mean-field table by sadcpavg procedure!")
         qry= qry + `[${keyx}avg] @lon0=${lon0}, @lon1=${lon1}, @lat0=${lat0}, @lat1=${lat1}, @dep0=${dep0}, @dep1=${dep1}, @dep_mode=${dep_mode}, ` +
                    `@mode=${mode}, @xorder=${xorder}, @yorder=${yorder}, @limit=${limit}, @mean_threshold=${mean_threshold}, @append=${append};`
       } else if (allspan_avg_flag==1) {
-        //fastify.log.info("Note: Only query stored mean-field table by sadcpgridqry procedure!")
+        fastify.log.info("Note: Only query stored mean-field table by sadcpgridqry procedure!")
         qry= qry + `[${keyx}gridqry] @lon0=${lon0}, @lon1=${lon1}, @lat0=${lat0}, @lat1=${lat1}, @dep0=${dep0}, @dep1=${dep1}, @dep_mode=${dep_mode}, ` +
                    `@mode=${mode}, @xorder=${xorder}, @yorder=${yorder}, @start=${start}, @end=${end}, @limit=${limit}, @mean_threshold=${mean_threshold}, @append=${append};`
       } else {
