@@ -32,7 +32,7 @@ async function cacheHandler (fastify, opts) {
       fastify.log.info({ msg: 'skip cache', type, fieldName })
     },
     // caching stats
-    logInterval: 300, //secs
+    logInterval: 300 * 6, //secs
     logReport: (report) => {
       fastify.log.info({ msg: 'cache stats' })
       console.table(report)
