@@ -229,6 +229,8 @@ str(speed, 8, 3) as "Speed(m/s)"
     .prop('fluorescence', S.number())
     .prop('transmission', S.number())
     .prop('oxygen', S.number())
+    .prop('cruise', S.string())
+    .prop('cast', S.string())
     .prop('datetime', S.string())
     .prop('year', S.integer())
     .prop('month', S.integer())
@@ -357,6 +359,21 @@ str(speed, 8, 3) as "Speed(m/s)"
           }
         }
       }
+
+      let cruise = ''
+      if (keyx === 'ctd') { //202305 add query cruise mode for CTD
+        if (typeof qstr.cruise !== 'undefined' && qstr.cruise.trim()) {
+          cruise = qstr.cruise.trim()
+          //fastify.log.info("In cruise query mode: " + cruise)
+          allspan_avg_flag = 0 //in ctdavg, ctdgridqry procedure, no cruise column in those tables.
+          // so don't use cruise mode if no need for querying CTD, that will use larger table to query (ctdqry) so that slower
+          // In other words, cruise mode is designed/uesed only for chemistry viewer, not for general cases.
+          qkey = qkey + '_' + cruise
+        } else {
+          qkey = qkey + '_NOcrqry'
+        }
+      }
+
       /*let mean = true //20220518 modified stored procedure in SQL SERVER that parameter 'mean' is replaced by mode
         let mode = (qstr.mode??'average').toLowerCase() //'raw', may transfer huge data
         if (mode === 'raw' ) { mean = false } */
@@ -371,8 +388,8 @@ str(speed, 8, 3) as "Speed(m/s)"
           period = [13,14,15,16]
         } else if (mode === 'month') {
           period = [1,2,3,4,5,6,7,8,9,10,11,12]
-        } else if (/^raw/.test(mode)) { //(mode === 'raw') {
-          limit = limited_row
+        } else if (/^raw/.test(mode)) {
+          if (!cruise) { limit = limited_row } //202305 add query cruise mode for CTD
         } else {
           if (Number.isInteger(Number(qstr.mode))) {
             //fastify.log.info("Mode is integer!" + qstr.mode)
@@ -387,7 +404,11 @@ str(speed, 8, 3) as "Speed(m/s)"
           allspan_avg_flag = 0
           mode = 'raw'
         } else if (/^raw/.test(mode)) { //i.e. raw or raw1
-          allspan_avg_flag = 1
+          if (!cruise) { //202305 add query cruise mode for CTD
+            allspan_avg_flag = 1
+          } else {
+            allspan_avg_flag = 0
+          }
           mode = 'raw'
         }
       }
@@ -465,16 +486,24 @@ str(speed, 8, 3) as "Speed(m/s)"
       let qry = `USE [${fastify.config.SQLDBNAME}];
                  EXEC [dbo].`
       if (allspan_avg_flag==2) {
-        fastify.log.info("Note: Only query stored mean-field table by sadcpavg procedure!")
+        fastify.log.info(`Note: Only query stored mean-field table by ${keyx}avg procedure!`)
         qry= qry + `[${keyx}avg] @lon0=${lon0}, @lon1=${lon1}, @lat0=${lat0}, @lat1=${lat1}, @dep0=${dep0}, @dep1=${dep1}, @dep_mode=${dep_mode}, ` +
-                   `@mode=${mode}, @xorder=${xorder}, @yorder=${yorder}, @limit=${limit}, @mean_threshold=${mean_threshold}, @append=${append};`
+                   `@mode=${mode}, @xorder=${xorder}, @yorder=${yorder}, @limit=${limit}, @mean_threshold=${mean_threshold}, @append=${append}`
       } else if (allspan_avg_flag==1) {
-        fastify.log.info("Note: Only query stored mean-field table by sadcpgridqry procedure!")
+        fastify.log.info(`Note: Only query stored mean-field table by ${keyx}gridqry procedure!`)
         qry= qry + `[${keyx}gridqry] @lon0=${lon0}, @lon1=${lon1}, @lat0=${lat0}, @lat1=${lat1}, @dep0=${dep0}, @dep1=${dep1}, @dep_mode=${dep_mode}, ` +
-                   `@mode=${mode}, @xorder=${xorder}, @yorder=${yorder}, @start=${start}, @end=${end}, @limit=${limit}, @mean_threshold=${mean_threshold}, @append=${append};`
+                   `@mode=${mode}, @xorder=${xorder}, @yorder=${yorder}, @start=${start}, @end=${end}, @limit=${limit}, @mean_threshold=${mean_threshold}, @append=${append}`
       } else {
+        fastify.log.info(`Note: Query original table by ${keyx}qry procedure!`)
         qry= qry + `[${keyx}qry] @lon0=${lon0}, @lon1=${lon1}, @lat0=${lat0}, @lat1=${lat1}, @dep0=${dep0}, @dep1=${dep1}, @dep_mode=${dep_mode}, ` +
-                   `@mode=${mode}, @xorder=${xorder}, @yorder=${yorder}, @start=${start}, @end=${end}, @limit=${limit}, @mean_threshold=${mean_threshold}, @append=${append};`
+                   `@mode=${mode}, @xorder=${xorder}, @yorder=${yorder}, @start=${start}, @end=${end}, @limit=${limit}, @mean_threshold=${mean_threshold}, @append=${append}`
+      }
+      //202305 add query cruise mode for CTD
+      if (cruise) {
+        cruise = `"${cruise}"`
+        qry = qry + `, @cruise=${cruise};`
+      } else {
+        qry = qry + ';'
       }
       //let qkey=`${lon0}_${lon1}_${lat0}_${lat1}_${start}_${end}_${limit}_${mode}_${mean_threshold}_${xorder}_${yorder}`
       if (limit === 'NULL') {
@@ -495,7 +524,7 @@ str(speed, 8, 3) as "Speed(m/s)"
       qkey = qkey + '_' + limit.toString() + '_' + mean_threshold.toString() + '_' + lon0.toString() + '_' + lon1.toString() +
              '_' + lat0.toString() + '_' + lat1.toString() + '_' + dep0.toString() + '_' + dep1.toString()
     //fastify.log.info(keyx + "Query key is: " + qkey)
-    //fastify.log.info(keyx + "Query command is: " + qry)
+      fastify.log.info(keyx + "Query command is: " + qry)
 /*    return({qry: qry,
               qkey: qkey,
               format: format,
@@ -877,6 +906,7 @@ Order by [GMT+8],longitude_degree,latitude_degree
           dep1: { type: 'number' },
           dep_mode: { type: 'string'},
           mode: { type: 'string'},
+          cruise: { type: 'string'},
           format: { type: 'string'},
           xorder: { type: 'integer'},
           yorder: { type: 'integer'},

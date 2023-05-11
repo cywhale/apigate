@@ -6,9 +6,9 @@ specifiers:
   '@fastify/env': ^4.2.0
   '@fastify/redis': ^6.1.1
   '@fastify/swagger': ^8.3.1
-  '@fastify/swagger-ui': ^1.8.0
+  '@fastify/swagger-ui': ^1.8.1
   desm: ^1.3.0
-  fastify: ^4.16.3
+  fastify: ^4.17.0
   fastify-plugin: ^4.5.0
   fluent-json-schema: ^4.1.0
   formdata-node: ^5.0.0
@@ -25,9 +25,9 @@ dependencies:
   '@fastify/env': 4.2.0
   '@fastify/redis': 6.1.1
   '@fastify/swagger': 8.3.1
-  '@fastify/swagger-ui': 1.8.0
+  '@fastify/swagger-ui': 1.8.1
   desm: 1.3.0
-  fastify: 4.16.3
+  fastify: 4.17.0
   fastify-plugin: 4.5.0
   fluent-json-schema: 4.1.0
   formdata-node: 5.0.0
@@ -63,7 +63,7 @@ packages:
       '@azure/core-auth': 1.4.0
       '@azure/core-rest-pipeline': 1.10.3
       '@azure/core-tracing': 1.0.1
-      '@azure/core-util': 1.3.1
+      '@azure/core-util': 1.3.2
       '@azure/logger': 1.0.4
       tslib: 2.5.0
     transitivePeerDependencies:
@@ -81,12 +81,12 @@ packages:
       - supports-color
     dev: false
 
-  /@azure/core-lro/2.5.2:
-    resolution: {integrity: sha512-tucUutPhBwCPu6v16KEFYML81npEL6gnT+iwewXvK5ZD55sr0/Vw2jfQETMiKVeARRrXHB2QQ3SpxxGi1zAUWg==}
+  /@azure/core-lro/2.5.3:
+    resolution: {integrity: sha512-ubkOf2YCnVtq7KqEJQqAI8dDD5rH1M6OP5kW0KO/JQyTaxLA0N0pjFWvvaysCj9eHMNBcuuoZXhhl0ypjod2DA==}
     engines: {node: '>=14.0.0'}
     dependencies:
       '@azure/abort-controller': 1.1.0
-      '@azure/core-util': 1.3.1
+      '@azure/core-util': 1.3.2
       '@azure/logger': 1.0.4
       tslib: 2.5.0
     dev: false
@@ -105,7 +105,7 @@ packages:
       '@azure/abort-controller': 1.1.0
       '@azure/core-auth': 1.4.0
       '@azure/core-tracing': 1.0.1
-      '@azure/core-util': 1.3.1
+      '@azure/core-util': 1.3.2
       '@azure/logger': 1.0.4
       form-data: 4.0.0
       http-proxy-agent: 5.0.0
@@ -122,8 +122,8 @@ packages:
       tslib: 2.5.0
     dev: false
 
-  /@azure/core-util/1.3.1:
-    resolution: {integrity: sha512-pjfOUAb+MPLODhGuXot/Hy8wUgPD0UTqYkY3BiYcwEETrLcUCVM1t0roIvlQMgvn1lc48TGy5bsonsFpF862Jw==}
+  /@azure/core-util/1.3.2:
+    resolution: {integrity: sha512-2bECOUh88RvL1pMZTcc6OzfobBeWDBf5oBbhjIhT1MV9otMVWCzpOJkkiKtrnO88y5GGBelgY8At73KGAdbkeQ==}
     engines: {node: '>=14.0.0'}
     dependencies:
       '@azure/abort-controller': 1.1.0
@@ -139,11 +139,11 @@ packages:
       '@azure/core-client': 1.7.2
       '@azure/core-rest-pipeline': 1.10.3
       '@azure/core-tracing': 1.0.1
-      '@azure/core-util': 1.3.1
+      '@azure/core-util': 1.3.2
       '@azure/logger': 1.0.4
-      '@azure/msal-browser': 2.36.0
+      '@azure/msal-browser': 2.37.0
       '@azure/msal-common': 7.6.0
-      '@azure/msal-node': 1.17.1
+      '@azure/msal-node': 1.17.2
       events: 3.3.0
       jws: 4.0.0
       open: 8.4.2
@@ -162,11 +162,11 @@ packages:
       '@azure/core-auth': 1.4.0
       '@azure/core-client': 1.7.2
       '@azure/core-http-compat': 1.3.0
-      '@azure/core-lro': 2.5.2
+      '@azure/core-lro': 2.5.3
       '@azure/core-paging': 1.5.0
       '@azure/core-rest-pipeline': 1.10.3
       '@azure/core-tracing': 1.0.1
-      '@azure/core-util': 1.3.1
+      '@azure/core-util': 1.3.2
       '@azure/logger': 1.0.4
       tslib: 2.5.0
     transitivePeerDependencies:
@@ -180,15 +180,15 @@ packages:
       tslib: 2.5.0
     dev: false
 
-  /@azure/msal-browser/2.36.0:
-    resolution: {integrity: sha512-OrVDZ9ftO7ExqZVHripAt+doKg6G14YbP2LoSygiWQoSqoO4CejoXLRLqANc/HGg18N0p/oaRETw4IHZvwsxZw==}
+  /@azure/msal-browser/2.37.0:
+    resolution: {integrity: sha512-YNGD/W/tw/5wDWlXOfmrVILaxVsorVLxYU2ovmL1PDvxkdudbQRyGk/76l4emqgDAl/kPQeqyivxjOU6w1YfvQ==}
     engines: {node: '>=0.8.0'}
     dependencies:
-      '@azure/msal-common': 12.1.0
+      '@azure/msal-common': 13.0.0
     dev: false
 
-  /@azure/msal-common/12.1.0:
-    resolution: {integrity: sha512-9RUiv0evSHvYtvF7r9ksShw9FgCeT6Rf6JB/SOMbMzI0VySZDUBSE+0b9e7DgL2Ph8wSARIh3m8c5pCK9TRY3w==}
+  /@azure/msal-common/13.0.0:
+    resolution: {integrity: sha512-GqCOg5H5bouvLij9NFXFkh+asRRxsPBRwnTDsfK7o0KcxYHJbuidKw8/VXpycahGXNxgtuhqtK/n5he+5NhyEA==}
     engines: {node: '>=0.8.0'}
     dev: false
 
@@ -197,11 +197,11 @@ packages:
     engines: {node: '>=0.8.0'}
     dev: false
 
-  /@azure/msal-node/1.17.1:
-    resolution: {integrity: sha512-1lC80yV+Y/gHqkYJ21Qy1Ej/cI/Kt1JcdY0xiM7/+mcEuBAkArR9B1YMY538PMZ5GfyVlYkCHYh/N0CBD5FJlQ==}
+  /@azure/msal-node/1.17.2:
+    resolution: {integrity: sha512-l8edYnA2LQj4ue3pjxVz1Qy4HuU5xbcoebfe2bGTRvBL9Q6n2Df47aGftkLIyimD1HxHuA4ZZOe23a/HshoYXw==}
     engines: {node: 10 || 12 || 14 || 16 || 18}
     dependencies:
-      '@azure/msal-common': 12.1.0
+      '@azure/msal-common': 13.0.0
       jsonwebtoken: 9.0.0
       uuid: 8.3.2
     dev: false
@@ -281,11 +281,11 @@ packages:
       fastify-plugin: 4.5.0
       glob: 8.1.0
       p-limit: 3.1.0
-      readable-stream: 4.3.0
+      readable-stream: 4.4.0
     dev: false
 
-  /@fastify/swagger-ui/1.8.0:
-    resolution: {integrity: sha512-srgVsAOyj+C7uyya5mcxz9Arrt3fzUM0b1wziJ3uCwk5pMuIRBOG8xDx4ZgjtqPzRzHs+NrRjCdNWqX/RL7qNg==}
+  /@fastify/swagger-ui/1.8.1:
+    resolution: {integrity: sha512-XMfLGZMXi5dl0Gy6R6tlistA4d0XlJJweUfQkPNVeeBq2hO03DmvtM5yrp8adF392Xoi+6rlGHFaneL9EQdsoA==}
     dependencies:
       '@fastify/static': 6.10.1
       fastify-plugin: 4.5.0
@@ -423,8 +423,8 @@ packages:
       is-array-buffer: 3.0.2
     dev: false
 
-  /async-cache-dedupe/1.10.2:
-    resolution: {integrity: sha512-sfZaST9/R5xfWi+CHAyftZ4B27/j45pU0yI/D/l0OdZMhPbWutGiFppmPj/AsvO1yrxOVsrjTIOCdCE3hUdBWA==}
+  /async-cache-dedupe/1.11.0:
+    resolution: {integrity: sha512-IlXG+D3m6qy8kIkp2bbKs3d+dyUXxVkacQJaNyBW16vtFbUGg8vpGxSQDLV/EvYk57KZldSgkOBLFksPcWTm+g==}
     dependencies:
       mnemonist: 0.39.5
       safe-stable-stringify: 2.4.3
@@ -761,8 +761,8 @@ packages:
     resolution: {integrity: sha512-79ak0JxddO0utAXAQ5ccKhvs6vX2MGyHHMMsmZkBANrq3hXc1CHzvNPHOcvTsVMEPl5I+NT+RO4YKMGehOfSIg==}
     dev: false
 
-  /fastify/4.16.3:
-    resolution: {integrity: sha512-W45bWZdjAcVxFUBubzkmiMp3VrIRpsqUP6D0NS2Qb1BjTSNNT1NxAubzM8tdMyC5mIBymtvPE3B+DYmItc1rlQ==}
+  /fastify/4.17.0:
+    resolution: {integrity: sha512-tzuY1tgWJo2Y6qEKwmLhFvACUmr68Io2pqP/sDKU71KRM6A6R3DrCDqLGqANbeLZcKUfdfY58ut35CGqemcTgg==}
     dependencies:
       '@fastify/ajv-compiler': 3.5.0
       '@fastify/error': 3.2.0
@@ -771,9 +771,9 @@ packages:
       avvio: 8.2.1
       fast-content-type-parse: 1.0.0
       fast-json-stringify: 5.7.0
-      find-my-way: 7.6.0
+      find-my-way: 7.6.2
       light-my-request: 5.9.1
-      pino: 8.11.0
+      pino: 8.14.1
       process-warning: 2.2.0
       proxy-addr: 2.0.7
       rfdc: 1.3.0
@@ -797,8 +797,8 @@ packages:
       reusify: 1.0.4
     dev: false
 
-  /find-my-way/7.6.0:
-    resolution: {integrity: sha512-H7berWdHJ+5CNVr4ilLWPai4ml7Y2qAsxjw3pfeBxPigZmaDTzF0wjJLj90xRCmGcWYcyt050yN+34OZDJm1eQ==}
+  /find-my-way/7.6.2:
+    resolution: {integrity: sha512-0OjHn1b1nCX3eVbm9ByeEHiscPYiHLfhei1wOUU9qffQkk98wE0Lo8VrVYfSGMgnSnDh86DxedduAnBf4nwUEw==}
     engines: {node: '>=14'}
     dependencies:
       fast-deep-equal: 3.1.3
@@ -1364,7 +1364,7 @@ packages:
   /mercurius-cache/3.0.3:
     resolution: {integrity: sha512-3ffyNPg9f8vp501cN0KYEfWSNWxfwfmpSwZpVPzkyxTu1UmmGdWspIIJ/9uIJ/Ga1P6JH9xUxE6wc1zRKh60hg==}
     dependencies:
-      async-cache-dedupe: 1.10.2
+      async-cache-dedupe: 1.11.0
       fastify-plugin: 4.5.0
     dev: false
 
@@ -1381,12 +1381,12 @@ packages:
       graphql-jit: 0.7.4_graphql@16.6.0
       mqemitter: 5.0.0
       p-map: 4.0.0
-      readable-stream: 4.3.0
+      readable-stream: 4.4.0
       safe-stable-stringify: 2.4.3
       secure-json-parse: 2.7.0
       single-user-cache: 0.6.0
       tiny-lru: 8.0.2
-      undici: 5.22.0
+      undici: 5.22.1
       ws: 8.13.0
     transitivePeerDependencies:
       - bufferutil
@@ -1548,23 +1548,23 @@ packages:
   /pino-abstract-transport/1.0.0:
     resolution: {integrity: sha512-c7vo5OpW4wIS42hUVcT5REsL8ZljsUfBjqV/e2sFxmFEFZiq1XLUp5EYLtuDH6PEHq9W1egWqRbnLUP5FuZmOA==}
     dependencies:
-      readable-stream: 4.3.0
+      readable-stream: 4.4.0
       split2: 4.2.0
     dev: false
 
-  /pino-std-serializers/6.2.0:
-    resolution: {integrity: sha512-IWgSzUL8X1w4BIWTwErRgtV8PyOGOOi60uqv0oKuS/fOA8Nco/OeI6lBuc4dyP8MMfdFwyHqTMcBIA7nDiqEqA==}
+  /pino-std-serializers/6.2.1:
+    resolution: {integrity: sha512-wHuWB+CvSVb2XqXM0W/WOYUkVSPbiJb9S5fNB7TBhd8s892Xq910bRxwHtC4l71hgztObTjXL6ZheZXFjhDrDQ==}
     dev: false
 
-  /pino/8.11.0:
-    resolution: {integrity: sha512-Z2eKSvlrl2rH8p5eveNUnTdd4AjJk8tAsLkHYZQKGHP4WTh2Gi1cOSOs3eWPqaj+niS3gj4UkoreoaWgF3ZWYg==}
+  /pino/8.14.1:
+    resolution: {integrity: sha512-8LYNv7BKWXSfS+k6oEc6occy5La+q2sPwU3q2ljTX5AZk7v+5kND2o5W794FyRaqha6DJajmkNRsWtPpFyMUdw==}
     hasBin: true
     dependencies:
       atomic-sleep: 1.0.0
       fast-redact: 3.1.2
       on-exit-leak-free: 2.1.0
       pino-abstract-transport: 1.0.0
-      pino-std-serializers: 6.2.0
+      pino-std-serializers: 6.2.1
       process-warning: 2.2.0
       quick-format-unescaped: 4.0.4
       real-require: 0.2.0
@@ -1620,8 +1620,8 @@ packages:
       util-deprecate: 1.0.2
     dev: false
 
-  /readable-stream/4.3.0:
-    resolution: {integrity: sha512-MuEnA0lbSi7JS8XM+WNJlWZkHAAdm7gETHdFK//Q/mChGyj2akEFtdLZh32jSdkWGbRwCW9pn6g3LWDdDeZnBQ==}
+  /readable-stream/4.4.0:
+    resolution: {integrity: sha512-kDMOq0qLtxV9f/SQv522h8cxZBqNZXuXNyjyezmfAAuribMyVXziljpQ/uQhfE1XLg2/TLTW2DsnoE4VAi/krg==}
     engines: {node: ^12.22.0 || ^14.17.0 || >=16.0.0}
     dependencies:
       abort-controller: 3.0.0
@@ -1793,6 +1793,7 @@ packages:
 
   /string-similarity/4.0.4:
     resolution: {integrity: sha512-/q/8Q4Bl4ZKAPjj8WerIBJWALKkaPRfrvhfF8k/B23i4nzrlRj2/go1m90In7nG/3XDSbOo0+pu6RvCTM9RGMQ==}
+    deprecated: Package no longer supported. Contact Support at https://www.npmjs.com/support for more info.
     dev: false
 
   /string.prototype.trim/1.2.7:
@@ -1903,8 +1904,8 @@ packages:
       which-boxed-primitive: 1.0.2
     dev: false
 
-  /undici/5.22.0:
-    resolution: {integrity: sha512-fR9RXCc+6Dxav4P9VV/sp5w3eFiSdOjJYsbtWfd4s5L5C4ogyuVpdKIVHeW0vV1MloM65/f7W45nR9ZxwVdyiA==}
+  /undici/5.22.1:
+    resolution: {integrity: sha512-Ji2IJhFXZY0x/0tVBXeQwgPlLWw13GVzpsWPQ3rV50IFMMof2I55PZZxtm4P6iNq+L5znYN9nSTAq0ZyE6lSJw==}
     engines: {node: '>=14.0'}
     dependencies:
       busboy: 1.6.0
