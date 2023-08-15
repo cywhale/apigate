@@ -389,7 +389,7 @@ str(speed, 8, 3) as "Speed(m/s)"
         } else if (mode === 'month') {
           period = [1,2,3,4,5,6,7,8,9,10,11,12]
         } else if (/^raw/.test(mode)) {
-          if (!cruise) { limit = limited_row } //202305 add query cruise mode for CTD
+          if (!cruise || mode !== 'rawx') { limit = limited_row } //202305 add query cruise mode for CTD
         } else {
           if (Number.isInteger(Number(qstr.mode))) {
             //fastify.log.info("Mode is integer!" + qstr.mode)
@@ -400,7 +400,7 @@ str(speed, 8, 3) as "Speed(m/s)"
           }
         }
         qkey = qkey + '_' + mode
-        if (mode === 'raw0') {
+        if (mode === 'raw0' || (mode === 'rawx' && cruise)) { //202305 add query cruise mode for CTD
           allspan_avg_flag = 0
           mode = 'raw'
         } else if (/^raw/.test(mode)) { //i.e. raw or raw1
