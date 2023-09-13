@@ -285,7 +285,7 @@ str(speed, 8, 3) as "Speed(m/s)"
         append = 'u,v'
       } else {
         qkey = 'CTD_'
-        vars = ['temperature', 'salinity', 'fluorescence', 'transmission', 'oxygen', 'count']
+        vars = ['temperature', 'salinity', 'density', 'fluorescence', 'transmission', 'oxygen', 'count']
         append = 'temperature'
       }
 
@@ -297,12 +297,14 @@ str(speed, 8, 3) as "Speed(m/s)"
         if (typeof qstr.start !== 'undefined') {
           if (/^\d+\.?\d*$/.test(qstr.start) && qstr.start.length===8) {
             start = qstr.start.substring(0, 4) + '-' + qstr.start.substring(4, 6) + '-' + qstr.start.substring(6)
-            if (isNaN(Date.parse(start))) {
-              fastify.log.info("Warning: Wrong start date format: " + start)
-              start='1991-01-01'
-            } else {
-              startd = Date.parse(start)
-            }
+          } else {
+            start = qstr.start
+          }
+          if (isNaN(Date.parse(start))) {
+            fastify.log.info("Warning: Wrong start date format: " + start)
+            start='1991-01-01'
+          } else {
+            startd = Date.parse(start)
           }
         }
         qkey = qkey + start
@@ -311,16 +313,18 @@ str(speed, 8, 3) as "Speed(m/s)"
         if (typeof qstr.end !== 'undefined') {
           if (/^\d+\.?\d*$/.test(qstr.end) && qstr.end.length===8) {
             end = qstr.end.substring(0, 4) + '-' + qstr.end.substring(4, 6) + '-' + qstr.end.substring(6)
-            if (isNaN(Date.parse(end))) {
-              fastify.log.info("Warning: Wrong end date format: " + end)
-              end='NULL'
+          } else {
+            end = qstr.end
+          }
+          if (isNaN(Date.parse(end))) {
+            fastify.log.info("Warning: Wrong end date format: " + end)
+            end='NULL'
+          } else {
+            if (Date.parse(end) >= endd) {
+              fastify.log.info("Warning: End date exceed limited last 3-years: " + end)
+              end = (new Date().getUTCFullYear()-limited_yrs-1).toString()+"-12-31"
             } else {
-              if (Date.parse(end) >= endd) {
-                fastify.log.info("Warning: End date exceed limited last 3-years: " + end)
-                end = (new Date().getUTCFullYear()-limited_yrs-1).toString()+"-12-31"
-              } else {
-                endd = Date.parse(end)
-              }
+              endd = Date.parse(end)
             }
           }
         }
@@ -475,12 +479,14 @@ str(speed, 8, 3) as "Speed(m/s)"
       }
 
       let mean_threshold = qstr.mean_threshold??-1
-      let lon0 = qstr.lon0??105
-      let lon1 = qstr.lon1??135
-      let lat0 = qstr.lat0??2
-      let lat1 = qstr.lat1??35
+      let lon0 = qstr.lon0 //??105 //now it's required
+      let lon1 = qstr.lon1??grd15moa(lon0)
+      let lat0 = qstr.lat0 //??2   //now it's required
+      let lat1 = qstr.lat1??grd15moa(lat0)
       let dep0 = qstr.dep0??-1
       let dep1 = qstr.dep1??-1
+      if (lon1 === lon0) { lon1 = grd15moa(lon0) }
+      if (lat1 === lat0) { lat1 = grd15moa(lat0) }
       //let std = (qstr.std??'').toLowerCase() //'woa13': `dbo.NODC_Standard_depths_woa13 group by depth`
       //let output = (qstr.output??'').toLowerCase()    //'file', file output (not yet)
       let qry = `USE [${fastify.config.SQLDBNAME}];
@@ -566,6 +572,7 @@ str(speed, 8, 3) as "Speed(m/s)"
     var chkmissFlag = true
     //var cacheout = [] //new PassThrough()
     const cacheout = new Readable({ objectMode: true })
+    cacheout._read = ()=>{}
     var predx = ''
     const pipex = (src, res) => { //, opts = {end: false})
       return new Promise((resolve, reject) => {
@@ -681,21 +688,23 @@ str(speed, 8, 3) as "Speed(m/s)"
           res.raw.write(data) //fastJson(sadcpSchema)(data)))
           cacheout.push(data)
         })
-        src.on('error', () => {
-          fastify.log.info("------!!Stream Error!!-------")
-          //reject
+        src.on('error', (err) => {
+          fastify.log.info("------!!Stream Error: ", err)
+          reject(err)
         })
         src.on('end', () => {
-          if (format === 'geojson') {
-            res.raw.write(`]}`)
-            cacheout.push(`]}`)
-          } else if (keyx === 'sadcp' && format === 'uvgrid') {
-            res.raw.write(`}]}`)
-            cacheout.push(`}]}`)
-          } else {
-            res.raw.write(`]`)
-            cacheout.push(`]`)
-          } //'end' event will before 'finish'
+          if (count>0) {
+            if (format === 'geojson') {
+              res.raw.write(`]}`)
+              cacheout.push(`]}`)
+            } else if (keyx === 'sadcp' && format === 'uvgrid') {
+              res.raw.write(`}]}`)
+              cacheout.push(`}]}`)
+            } else {
+              res.raw.write(`]`)
+              cacheout.push(`]`)
+            } //'end' event will before 'finish'
+          }
           cacheout.push(null)
         //fastify.log.info("Now Set cache with data length: " + cacheout.length)
         /*const cachers = new Readable({
@@ -713,7 +722,7 @@ str(speed, 8, 3) as "Speed(m/s)"
           cacheout.pipe(streamCache.set(qkey)) //.on('error', err => {
           //  fastify.log.info("Set cache error: " + err)
           //})
-          fastify.log.info("------!!Stream End with cache set!! " + qkey)
+          fastify.log.info("------!!Stream End with cache set!! data count: " + count)
         })
         src.on('finish', () => { //'end'
           //res.raw.write(']')
@@ -753,24 +762,31 @@ str(speed, 8, 3) as "Speed(m/s)"
       querystring: {
         type: "object",
         properties: {
-          lon0: { type: 'number' },
-          lon1: { type: 'number' },
-          lat0: { type: 'number' },
-          lat1: { type: 'number' },
-          dep0: { type: 'number' },
-          dep1: { type: 'number' },
-          dep_mode: { type: 'string'},
-          mode: { type: 'string'},
-          format: { type: 'string'},
-          xorder: { type: 'integer'},
-          yorder: { type: 'integer'},
-          start: { type: 'string' },
-          end: { type: 'string'},
-          limit: { type: 'integer'},
-          mean_threshold: { type: 'string'},
+          lon0: { type: 'number', description: 'Start longitude' },
+          lon1: { type: 'number', description: 'Optional, end longitude' },
+          lat0: { type: 'number', description: 'Start latitude'},
+          lat1: { type: 'number', description: 'Optional, end latitude' },
+          dep0: { type: 'number',
+                  description: 'Optional, if only dep0 specified: output depth <= dep0; both dep0, dep1 specified: dep0 <= output depth <= dep1' },
+          dep1: { type: 'number',
+                  description: 'Optional, if only dep1 specified: output depth >= dep1; see also: dep0' },
+          dep_mode: { type: 'string',
+                      description: 'Optional, mean: depth-averaged; exact: one depth specified by dep0; any integer > 1: cut-level depth'},
+          mode: { type: 'string',
+                  description: 'Optional (default is long-term average), month: month climatology; monsoon: monsoon climatology; 0-18: Time_period data; see also: https://www.odb.ntu.edu.tw/adcp/adcp15moa/'},
+          format: { type: 'string', description: 'Optional (default: json), or geojson'},
+          xorder: { type: 'integer',
+                    description: 'Optional, any integer which positive: increasing or negative: descending order of output in longitude(x). Larger/smaller integer indicates priority in the ordering of x or y'},
+          yorder: { type: 'integer',
+                    description: 'Optional, any integer which positive: increasing or negative: descending order of output in latitude(y); see also: xorder'},
+          start: { type: 'string', description: 'Optional, start-date of data' },
+          end: { type: 'string', description: 'Optional, end-date of data, limited to no later than the most recent three years' },
+          limit: { type: 'integer', description: 'Optional, limit the number of output data'},
+          mean_threshold: { type: 'string', description: `Optional, the minimum criteria for number of data in a grid when using "mean/monsoon" mode`},
           append: { type: 'string', default: 'u,v',
                     description: `Output multi-variables by comma-separated string: "u,v,count"`}
-        }
+        },
+        required: ['lon0', 'lat0']
       },
 /*    headers: { //S.object().prop('x-ocpu-cache', S.string()),
         type: 'object',
@@ -898,25 +914,32 @@ Order by [GMT+8],longitude_degree,latitude_degree
       querystring: {
         type: "object",
         properties: {
-          lon0: { type: 'number' },
-          lon1: { type: 'number' },
-          lat0: { type: 'number' },
-          lat1: { type: 'number' },
-          dep0: { type: 'number' },
-          dep1: { type: 'number' },
-          dep_mode: { type: 'string'},
-          mode: { type: 'string'},
-          cruise: { type: 'string'},
-          format: { type: 'string'},
-          xorder: { type: 'integer'},
-          yorder: { type: 'integer'},
-          start: { type: 'string' },
-          end: { type: 'string'},
-          limit: { type: 'integer'},
-          mean_threshold: { type: 'string'},
+          lon0: { type: 'number', description: 'Start longitude' },
+          lon1: { type: 'number', description: 'Optional, end longitude' },
+          lat0: { type: 'number', description: 'Start latitude'},
+          lat1: { type: 'number', description: 'Optional, end latitude' },
+          dep0: { type: 'number',
+                  description: 'Optional, if only dep0 specified: output depth <= dep0; both dep0, dep1 specified: dep0 <= output depth <= dep1' },
+          dep1: { type: 'number',
+                  description: 'Optional, if only dep1 specified: output depth >= dep1; see also: dep0' },
+          dep_mode: { type: 'string',
+                      description: 'Optional, mean: depth-averaged; exact: one depth specified by dep0; any integer > 1: cut-level depth'},
+          mode: { type: 'string',
+                  description: 'Optional (default is long-term average), month: month climatology; monsoon: monsoon climatology; 0-18: Time_period data; see also: https://www.odb.ntu.edu.tw/ctd/ctd15moa/'},
+          cruise: { type: 'string', description: 'Deprecated, only internally used.'},
+          format: { type: 'string', description: 'Optional (default: json), or geojson'},
+          xorder: { type: 'integer',
+                    description: 'Optional, any integer which positive: increasing or negative: descending order of output in longitude(x). Larger/smaller integer indicates priority in the ordering of x or y'},
+          yorder: { type: 'integer',
+                    description: 'Optional, any integer which positive: increasing or negative: descending order of output in latitude(y); see also: xorder'},
+          start: { type: 'string', description: 'Optional, start-date of data' },
+          end: { type: 'string', description: 'Optional, end-date of data, limited to no later than the most recent three years' },
+          limit: { type: 'integer', description: 'Optional, limit the number of output data'},
+          mean_threshold: { type: 'string', description: `Optional, the minimum criteria for number of data in a grid when using "mean/monsoon" mode`},
           append: { type: 'string', default: 'temperature',
-                    description: `Output multi-variables by comma-separated string: "temperature,salinity,fluorescence,transmission,oxygen,count"`}
-        }
+                    description: `Output multi-variables by comma-separated string: "temperature,salinity,density,fluorescence,transmission,oxygen,count"`}
+        },
+        required: ['lon0', 'lat0']
       },
       response: {
         200:
