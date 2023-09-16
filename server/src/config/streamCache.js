@@ -1,6 +1,6 @@
 'use strict'
 import fp from 'fastify-plugin'
-import LRUMap from 'lru-cache'
+import { LRUCache as LRUMap } from 'lru-cache' //no default name before "lru-cache": 9.0.0, initially work at "^7.18.3"
 //import streamBufferCache from '@hqjs/stream-buffer-cache';
 //const Cache = streamBufferCache(LRUMap)
 

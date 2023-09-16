@@ -147,6 +147,7 @@ str(speed, 8, 3) as "Speed(m/s)"
             depth: row.depth,
             temperature: row.temperature,
             salinity: row.salinity,
+            density: row.density,
             fluorescence: row.fluorescence,
             transmission: row.transmission,
             oxygen: row.oxygen,
@@ -226,6 +227,7 @@ str(speed, 8, 3) as "Speed(m/s)"
     .prop('depth', S.number())
     .prop('temperature', S.number())
     .prop('salinity', S.number())
+    .prop('density', S.number())
     .prop('fluorescence', S.number())
     .prop('transmission', S.number())
     .prop('oxygen', S.number())
@@ -248,6 +250,7 @@ str(speed, 8, 3) as "Speed(m/s)"
         .prop('depth', S.number())
         .prop('temperature', S.number())
         .prop('salinity', S.number())
+        .prop('density', S.number())
         .prop('fluorescence', S.number())
         .prop('transmission', S.number())
         .prop('oxygen', S.number())
