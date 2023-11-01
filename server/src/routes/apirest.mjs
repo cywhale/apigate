@@ -57,7 +57,8 @@ str(speed, 8, 3) as "Speed(m/s)"
     let cy = cury
     if (cury !== grdy) {
       ygap = parseInt((grdy - cury)/iy)
-      xdif = nx - parseInt((grdx - xmin)/ix)
+      //xdif = nx - parseInt((grdx - xmin)/ix)
+      xdif = nx - (parseInt((grdx - xmin)/ix) + 1) + 1
       xgap = parseInt((curx - xmin)/ix)
       gap = xdif + (ygap-1) * nx + xgap //lat (y) is DESC in order
       cy = grdy - ygap * iy
@@ -561,8 +562,10 @@ str(speed, 8, 3) as "Speed(m/s)"
     //fastify.log.info(keyx + "!! Cached Miss: " + qkey)
     var count = 0
     let bbox = [grd15moa(lon0), grd15moa(lat0), grd15moa(lon1), grd15moa(lat1)]
-    let grdnx= parseInt((bbox[2]-bbox[0])/0.25) + 1
-    let grdny= parseInt((bbox[3]-bbox[1])/0.25) + 1
+    let grdnx= parseInt((bbox[2]-bbox[0])/0.25) //+ 1
+    let grdny= parseInt((bbox[3]-bbox[1])/0.25) //+ 1
+    let nx = grdnx + 1
+    let ny = grdny + 1
     let dx = 0.25
     let dy = 0.25
     //if (format==="uvgrid") {fastify.log.info("UV-grids format wit bbox: " + bbox + " and grid number: " + grdnx)}
@@ -626,11 +629,11 @@ str(speed, 8, 3) as "Speed(m/s)"
               cacheout.push(predx)
               data = JSON.stringify(toGeoJsonRow(chunk))
             } else if (keyx === 'sadcp' && format === 'uvgrid') { //JSON format for GFS: https://github.com/cambecc/grib2json/blob/master/README.md
-              predx = `{"header":{"periodMode":${mode},"periodArray":${JSON.stringify(period)},"parameterCategory":11,"parameterNumber":1,"parameterNumberName":"UV-grids","parameterUnit":"m.s-1","refTime":null,"forcastTime":0,"lo1":${bbox[0]},"la1":${bbox[3]},"lo2":${bbox[2]},"la2":${bbox[1]},"nx":${grdnx},"ny":${grdny},"dx":${dx},"dy":${dy}},"data":[`
+              predx = `{"header":{"periodMode":${mode},"periodArray":${JSON.stringify(period)},"parameterCategory":11,"parameterNumber":1,"parameterNumberName":"UV-grids","parameterUnit":"m.s-1","refTime":null,"forcastTime":0,"lo1":${bbox[0]},"la1":${bbox[3]},"lo2":${bbox[2]},"la2":${bbox[1]},"nx":${nx},"ny":${ny},"dx":${dx},"dy":${dy}},"data":[`
               res.raw.write(predx)
               cacheout.push(predx)
               //if (chkmissFlag) { //count == 0 always check
-              stat = grdMissingVal(res, bbox[0], gridx, gridy, chunk.longitude, chunk.latitude, dc, di, dj, dx, dy, grdnx, period)
+              stat = grdMissingVal(res, bbox[0], gridx, gridy, chunk.longitude, chunk.latitude, dc, di, dj, dx, dy, nx, period)
               //}
               if (stat.gap > 0) {
                 //if (dp === 0) { // means at start of period //here dp must 0
@@ -658,7 +661,7 @@ str(speed, 8, 3) as "Speed(m/s)"
               data =`,${JSON.stringify(toGeoJsonRow(chunk))}`;
             } else if (keyx === 'sadcp' && format === 'uvgrid') {
               if (chkmissFlag) {
-                stat = grdMissingVal(res, bbox[0], gridx, gridy, chunk.longitude, chunk.latitude, dc, di, dj, dx, dy, grdnx, period)
+                stat = grdMissingVal(res, bbox[0], gridx, gridy, chunk.longitude, chunk.latitude, dc, di, dj, dx, dy, nx, period)
               }
               if (stat.gap > 0) {
                 for(let i=0;i<stat.out.length;i++) {cacheout.push(stat.out[i])} //cacheout.push(...stat.out) //when using array
