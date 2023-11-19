@@ -1,7 +1,7 @@
 {
 	"name": "apigate",
 	"type": "module",
-	"version": "1.4.4",
+	"version": "1.4.5",
 	"description": "ODB API gate",
 	"main": "index.mjs",
 	"scripts": {
@@ -30,8 +30,8 @@
 		"formdata-node": "^5.0.1",
 		"fs": "0.0.1-security",
 		"knex": "^2.5.1",
-		"lru-cache": "^10.0.1",
-		"mercurius": "^13.2.2",
+		"lru-cache": "^10.0.2",
+		"mercurius": "^13.3.0",
 		"mercurius-cache": "^5.0.0",
 		"tedious": "^16.6.0"
 	}

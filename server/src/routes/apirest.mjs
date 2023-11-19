@@ -386,6 +386,7 @@ str(speed, 8, 3) as "Speed(m/s)"
         let mode = (qstr.mode??'average').toLowerCase() //'raw', may transfer huge data
         if (mode === 'raw' ) { mean = false } */
       // 202207: add raw0: means real raw data; raw1: gridded raw data but all limit 1000/limited_row
+      let auth = 'guest' //disable rowx and cruise mode (now all has no auth)
       let mode = 'NULL'
       let period = [0]
       if (typeof qstr.mode !== 'undefined') {
@@ -397,7 +398,7 @@ str(speed, 8, 3) as "Speed(m/s)"
         } else if (mode === 'month') {
           period = [1,2,3,4,5,6,7,8,9,10,11,12]
         } else if (/^raw/.test(mode)) {
-          if (!cruise || mode !== 'rawx') { limit = limited_row } //202305 add query cruise mode for CTD
+          if (auth === 'guest' || !cruise || mode !== 'rawx') { limit = limited_row } //202305 add query cruise mode for CTD
         } else {
           if (Number.isInteger(Number(qstr.mode))) {
             //fastify.log.info("Mode is integer!" + qstr.mode)
@@ -408,7 +409,7 @@ str(speed, 8, 3) as "Speed(m/s)"
           }
         }
         qkey = qkey + '_' + mode
-        if (mode === 'raw0' || (mode === 'rawx' && cruise)) { //202305 add query cruise mode for CTD
+        if (mode === 'raw0' || (mode === 'rawx' && cruise && auth !== 'guest')) { //202305 add query cruise mode for CTD <- disabled
           allspan_avg_flag = 0
           mode = 'raw'
         } else if (/^raw/.test(mode)) { //i.e. raw or raw1
@@ -592,6 +593,7 @@ str(speed, 8, 3) as "Speed(m/s)"
         src.on('data', chunk => {
           let data
           let stat = {"gap":0}
+          chunk.time_period = chunk.time_period.trim()
 
           if (keyx === 'sadcp' && format === 'uvgrid') {
             if (count > 0 && (chunk.longitude !== gridx || chunk.latitude !== gridy)) {

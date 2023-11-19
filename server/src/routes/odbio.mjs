@@ -71,7 +71,7 @@ export default async function odbio (fastify, opts, next) {
   fastify.get('/occurrence/:name', {
     schema: {
       description: 'Occurrence records of species in ODB Bio-database',
-      tags: ['Occurrence'],
+      //tags: ['Occurrence'],
       params: nameSchemaObj,
       querystring: {
         type: "object",
@@ -133,7 +133,7 @@ export default async function odbio (fastify, opts, next) {
   fastify.get('/taxonomy/:name', {
     schema: {
       description: 'Taxonomy of species in ODB Bio-database',
-      tags: ['Taxonomy'],
+      //tags: ['Taxonomy'],
       params: nameSchemaObj,
       response: {
         200: darwinTaxonSchema
