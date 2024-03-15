@@ -593,7 +593,9 @@ str(speed, 8, 3) as "Speed(m/s)"
         src.on('data', chunk => {
           let data
           let stat = {"gap":0}
-          chunk.time_period = chunk.time_period.trim()
+          //console.log("Debug time_period: ", chunk.time_period, typeof chunk.time_period)
+          chunk.time_period = typeof chunk.time_period === 'string'?
+                              chunk.time_period.trim(): chunk.time_period.toString().trim()
 
           if (keyx === 'sadcp' && format === 'uvgrid') {
             if (count > 0 && (chunk.longitude !== gridx || chunk.latitude !== gridy)) {
