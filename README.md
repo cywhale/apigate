@@ -18,8 +18,8 @@
 
 #### Demo 
 
-[![Demo_by_CTD_API](https://github.com/cywhale/ODB/blob/master/img/ctd_api_demo_byGMT01.png)](https://github.com/cywhale/ODB/blob/master/img/ctd_api_demo_byGMT01.png)
-Use the CTD mean data queried by the ODB CTD API to plot the sea temperature and salinity distribution in the waters around Taiwan and the sea temperature, salinity and density profiles along 22°N.
+[![Demo_by_CTD_API](https://github.com/cywhale/ODB/blob/master/img/ctd_api_demo_byGMT01.png)](https://github.com/cywhale/ODB/blob/master/img/ctd_api_demo_byGMT01.png)<br/>
+*Use the CTD mean data queried by the ODB CTD API to plot the sea temperature and salinity distribution in the waters around Taiwan and the sea temperature, salinity and density profiles along 22°N.*
 
 #### Attribution              
 
