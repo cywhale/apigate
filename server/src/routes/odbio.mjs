@@ -4,7 +4,7 @@ import { FormData } from 'formdata-node'
 
 export const autoPrefix = '/bio'
 
-export default async function odbio (fastify, opts, next) {
+export default async function odbio (fastify, opts) {
 //return general json
 /*const occqry = `query ($sp: String!, $grid: Int) {
     occurmdl(sp: $sp, grid: $grid)
@@ -150,6 +150,7 @@ export default async function odbio (fastify, opts, next) {
     return reply.graphql(taxqry, null, {sp: spname})
   })
 
-  next()
+  //next()
+  return
 }
 

@@ -7,7 +7,7 @@ import resolvers from './graphql/resolvers.mjs'
 import fs from 'fs'
 import { Readable } from 'node:stream'
 
-export default async function (fastify, opts, next) {
+export default async function (fastify, opts) {
   fastify.decorate('conf', {
     node_env: process.env.NODE_ENV || 'development',
     port: 3023 //process.env.PORT || 3000,
@@ -60,11 +60,12 @@ export default async function (fastify, opts, next) {
           `direction as "direction", speed as "speed" From ${fastify.config.TABLE_SADCP}`
       ).then(data => {
         fastify.log.info('Test first data' + JSON.stringify(data))
-        next()
+        //next()
+        return
       })
     } catch(err) {
       fastify.log.error({actor: 'Knex'}, 'Error: Register failed.' + err)
-      next()
+      //next()
     }
   })
 
@@ -100,10 +101,10 @@ export default async function (fastify, opts, next) {
       } else {
         fastify.log.info({actor: 'streamBufferCache'}, '!!Cache Test Miss')
       }
-      next()
+      return
     } catch(err) {
       fastify.log.error({actor: 'streamBufferCache'}, 'Error: Register failed.' + err)
-      next()
+      //next()
     }
   })
 

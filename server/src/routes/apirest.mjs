@@ -12,7 +12,7 @@ import { finished } from 'stream/promises'
 //export const autoPrefix = process.env.NODE_ENV === 'production'? '/api' : '/apitest'
 export const autoPrefix = '/api'
 
-export default async function apirest (fastify, opts, next) {
+export default async function apirest (fastify, opts) {
 /* sadcp data looks like
   odb_cruise_id longitude_degree latitude_degree               GMT+8 depth
 1    OR10277            119.9939        21.88746 1991-04-20 19:11:00   150
@@ -558,7 +558,8 @@ str(speed, 8, 3) as "Speed(m/s)"
           fastify.log.info("----Cache pipe end----")
           reply.sent = true
       })*/
-      next()
+      //next() //deprecated fastify v5
+      return
     } else {
     //fastify.log.info(keyx + "!! Cached Miss: " + qkey)
     var count = 0
@@ -759,7 +760,8 @@ str(speed, 8, 3) as "Speed(m/s)"
     }
     run_fs().catch(fastify.log.error);
 
-    next()
+    //next()
+    return
     } //end of not-cached else
   }
 

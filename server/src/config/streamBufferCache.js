@@ -116,6 +116,7 @@ const sbcache = new Cache(opts)
 fastify.decorate('streamCache', sbcache)*/
 fastify.decorate('streamBufferCache', streamBufferCache)
 done()
+
 }
 
 export default fp(streamBufferCachePlugin, {
