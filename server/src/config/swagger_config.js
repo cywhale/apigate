@@ -14,7 +14,8 @@ const apiConf = {
           '* This swagger-UI is just for trials of ODB Open API.\n' +
           '* Specify smaller longitude/latitude/depth range can get faster response.\n' +
           '* Directly using these APIs by HTTP GET method (shown in the block of Request URL) can be even much faster.\n' +
-          '* Note that *this UI may get stuck if too much data being queryed.*',
+          '* Note that *this UI may get stuck if too much data being queryed.*\n' +
+          '* 注意：此Swagger介面僅限用於API測試，請使用較小範圍的時間與空間參數。較大資料量有可能導致介面失聯而使網站運作異常。',
         version: '1.0.0'
       },
       //externalDocs: {
