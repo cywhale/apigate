@@ -275,10 +275,16 @@ str(speed, 8, 3) as "Speed(m/s)"
 */
   const queryPipe = async (req, reply, keyx='sadcp') => {
       const qstr = req.query
+      const test_raw = (typeof qstr.mode !== 'undefined') && (/^raw/.test(qstr.mode))
       let start='1991-01-01'
       let end = 'NULL' //'' before modifed query to stored procedure in mssql 20220505
       let startd = Date.parse(start)
-      let endd = Date.parse((new Date().getUTCFullYear()-limited_yrs).toString()+"-01-01")
+      let endd
+      if (test_raw) {
+        endd = Date.parse((new Date().getUTCFullYear()-limited_yrs).toString()+"-01-01")
+      } else {
+        endd = Date.parse((new Date().getUTCFullYear()).toString()+"-12-31")
+      }
       let allspan_avg_flag = 1 // modified 20220720: 2:for all time-span use sadcpavg procedure to fetch pre-calculated table
                                // 1: have time-specific requirement use sadcpgridqry procedure (yyyymm);
                                // 0: only for non gridded raw mode: sadcpqry
@@ -324,7 +330,7 @@ str(speed, 8, 3) as "Speed(m/s)"
             fastify.log.info("Warning: Wrong end date format: " + end)
             end='NULL'
           } else {
-            if (Date.parse(end) >= endd) {
+            if (test_raw && Date.parse(end) >= endd) {
               fastify.log.info("Warning: End date exceed limited last 3-years: " + end)
               end = (new Date().getUTCFullYear()-limited_yrs-1).toString()+"-12-31"
             } else {
@@ -333,11 +339,11 @@ str(speed, 8, 3) as "Speed(m/s)"
           }
         }
       }
-      if (!(/^raw/.test(qstr.mode)) && startd <= Date.parse('1991-12-31') && (end === 'NULL' ||
-          endd === Date.parse((new Date().getUTCFullYear()-limited_yrs-1).toString()+"-12-31"))) {
-        fastify.log.info("Warning: Use full-span date: " + start + "-" + end)
-        allspan_avg_flag = 2
-      }
+      //if (!test_raw && startd <= Date.parse('1991-12-31') && (end === 'NULL' ||
+      //    endd >= Date.parse((new Date().getUTCFullYear()-1).toString()+"-12-31"))) { //average data cancel the limitation of limited_yrs
+      //  fastify.log.info("Warning: Use full-span date: " + start + "-" + end)
+      //  allspan_avg_flag = 2
+      //} //2025-01-24 to cancel this mode to make user specifically use date-query
 
       if (end === 'NULL') {
         qkey = qkey + '_NA'
