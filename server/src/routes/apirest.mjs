@@ -775,7 +775,7 @@ str(speed, 8, 3) as "Speed(m/s)"
     url: '/sadcp',
     method: ['GET'],
     schema: {
-      description: 'ODB SADCP API',
+      description: "ODB SADCP API provides ocean current data from SADCP (shipboard Acoustic Doppler Current Profiler) collected by Taiwan's ocean research vessels since 1991 (> 1.85 billion records).",
       tags: ['SADCP'],
       querystring: {
         type: "object",
@@ -785,9 +785,9 @@ str(speed, 8, 3) as "Speed(m/s)"
           lat0: { type: 'number', description: 'Start latitude'},
           lat1: { type: 'number', description: 'Optional, end latitude' },
           dep0: { type: 'number',
-                  description: 'Optional, if only dep0 specified: output depth >= dep0; both dep0, dep1 specified: dep0 <= output depth <= dep1' },
+                  description: 'Minimum sampling depth (optional): if only dep0 specified: output depth >= dep0; both dep0, dep1 specified: dep0 <= output depth <= dep1' },
           dep1: { type: 'number',
-                  description: 'Optional, if only dep1 specified: output depth <= dep1; see also: dep0' },
+                  description: 'Maximum sampling depth (optional): if only dep1 specified: output depth <= dep1; see also: dep0' },
           dep_mode: { type: 'string',
                       description: 'Optional, mean: depth-averaged; exact: one depth specified by dep0; any integer > 1: cut-level depth'},
           mode: { type: 'string',
@@ -927,7 +927,7 @@ Order by [GMT+8],longitude_degree,latitude_degree
     url: '/ctd',
     method: ['GET'],
     schema: {
-      description: 'ODB CTD API',
+      description: "ODB CTD API provides oceanographic data from Taiwan’s research vessel CTD (Conductivity-Temperature-Depth Profiler) system since 1985 (> 17.44 million records), including hydrographic parameters: sea temperature, salinity, density, fluorescence, transmission, and oxygen.",
       tags: ['CTD'],
       querystring: {
         type: "object",
@@ -937,9 +937,9 @@ Order by [GMT+8],longitude_degree,latitude_degree
           lat0: { type: 'number', description: 'Start latitude'},
           lat1: { type: 'number', description: 'Optional, end latitude' },
           dep0: { type: 'number',
-                  description: 'Optional, if only dep0 specified: output depth >= dep0; both dep0, dep1 specified: dep0 <= output depth <= dep1' },
+                  description: 'Minimum sampling depth (optional): if only dep0 specified: output depth >= dep0; both dep0, dep1 specified: dep0 <= output depth <= dep1' },
           dep1: { type: 'number',
-                  description: 'Optional, if only dep1 specified: output depth <= dep1; see also: dep0' },
+                  description: 'Maximum sampling depth (optional): if only dep1 specified: output depth <= dep1; see also: dep0' },
           dep_mode: { type: 'string',
                       description: 'Optional, mean: depth-averaged; exact: one depth specified by dep0; any integer > 1: cut-level depth'},
           mode: { type: 'string',
