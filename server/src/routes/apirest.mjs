@@ -775,7 +775,7 @@ str(speed, 8, 3) as "Speed(m/s)"
     url: '/sadcp',
     method: ['GET'],
     schema: {
-      description: "ODB SADCP API provides ocean current data from SADCP (shipboard Acoustic Doppler Current Profiler) collected by Taiwan's ocean research vessels since 1991 (> 1.85 billion records).",
+      description: "ODB SADCP API provides ocean current data from shipboard Acoustic Doppler Current Profiler (SADCP) collected by Taiwan's ocean research vessels since 1991 (> 185 million records).",
       tags: ['SADCP'],
       querystring: {
         type: "object",
@@ -792,7 +792,7 @@ str(speed, 8, 3) as "Speed(m/s)"
                       description: 'Optional, mean: depth-averaged; exact: one depth specified by dep0; any integer >= 5: cut-level depth'},
           mode: { type: 'string',
                   description: 'Optional (default is long-term average), month: month climatology; monsoon: monsoon climatology; 0-18: Time_period data; see also: https://www.odb.ntu.edu.tw/adcp/adcp15moa/'},
-          format: { type: 'string', description: 'Optional (default: json), or geojson'},
+          format: { type: 'string', description: 'Optional: json (default), geojson, or uvgrid which returns a gridded UV JSON (header + data[]; the data array flattens the lon–lat grid, each cell stores per-time_period values like {u, v})'},
           xorder: { type: 'integer',
                     description: 'Optional, any integer which positive: increasing or negative: descending order of output in longitude(x). Larger/smaller integer indicates priority in the ordering of x or y'},
           yorder: { type: 'integer',
@@ -800,9 +800,9 @@ str(speed, 8, 3) as "Speed(m/s)"
           start: { type: 'string', description: 'Optional, start-date of data' },
           end: { type: 'string', description: 'Optional, end-date of data, limited to no later than the most recent three years' },
           limit: { type: 'integer', description: 'Optional, limit the number of output data'},
-          mean_threshold: { type: 'string', description: `Optional, the minimum criteria for number of data in a grid when using "mean/monsoon" mode`},
+          mean_threshold: { type: 'string', description: `Optional, the minimum criteria for number of data in a grid when using mean mode`},
           append: { type: 'string', default: 'u,v',
-                    description: `Output multi-variables by comma-separated string: "u,v,count"`}
+                    description: `Output multi-variables by comma-separated string: "u,v,speed,direction,count"`}
         },
         required: ['lon0', 'lat0']
       },
