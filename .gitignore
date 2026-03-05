@@ -35,3 +35,6 @@
 **/.yarn/
 **/.yarnrc
 **/cache
+**/kuroshio_original
+**/__pycache__/
+**/*.npz

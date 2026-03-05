@@ -1,0 +1,15 @@
+[project]
+name = "kurshio-current"
+version = "0.1.0"
+description = "SADCP API based 2D Kuroshio current map (0.25 degree grid)"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+  "basemap>=2.0.0",
+  "basemap-data-hires>=2.0.0",
+  "matplotlib>=3.10.0",
+  "numpy>=2.2.0",
+  "requests>=2.32.0",
+]
+
+[tool.uv]
+package = false
