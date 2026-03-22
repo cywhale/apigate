@@ -1,0 +1,35 @@
+[
+  {
+    "mode": "Annual",
+    "grid_count_total": 52,
+    "grid_count_nw": 7,
+    "nw_ratio_percent": 13.461538461538462,
+    "nw_mean_speed_mps": 0.3305714285714286,
+    "all_mean_speed_mps": 0.49211538461538457,
+    "mean_u_mps": 0.1692307692307692,
+    "mean_v_mps": 0.41434615384615375,
+    "mean_direction_deg": 91.29999999999998
+  },
+  {
+    "mode": "NE Monsoon",
+    "grid_count_total": 52,
+    "grid_count_nw": 9,
+    "nw_ratio_percent": 17.307692307692307,
+    "nw_mean_speed_mps": 0.34700000000000003,
+    "all_mean_speed_mps": 0.4599615384615384,
+    "mean_u_mps": 0.1423846153846154,
+    "mean_v_mps": 0.381826923076923,
+    "mean_direction_deg": 94.76923076923077
+  },
+  {
+    "mode": "SW Monsoon",
+    "grid_count_total": 52,
+    "grid_count_nw": 10,
+    "nw_ratio_percent": 19.23076923076923,
+    "nw_mean_speed_mps": 0.3195,
+    "all_mean_speed_mps": 0.5144807692307692,
+    "mean_u_mps": 0.1826346153846154,
+    "mean_v_mps": 0.43294230769230774,
+    "mean_direction_deg": 104.30961538461537
+  }
+]

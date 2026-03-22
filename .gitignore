@@ -38,3 +38,5 @@
 **/kuroshio_original
 **/__pycache__/
 **/*.npz
+**/research_plan/*.pdf
+**/research_plan/**/*.pdf
