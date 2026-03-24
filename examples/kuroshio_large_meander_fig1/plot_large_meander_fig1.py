@@ -66,7 +66,7 @@ def build_map(ax: plt.Axes, lon0, lon1, lat0, lat1) -> Basemap:
     m.fillcontinents(color="#cfcfcf", lake_color="#f8fbff", zorder=3)
     m.drawcoastlines(linewidth=0.75, color="0.2", zorder=4)
     m.drawparallels(np.arange(math.floor(lat0), math.ceil(lat1) + 0.001, 1.0), labels=[1, 0, 0, 0], linewidth=0.22, dashes=[1, 0], fontsize=9, color="0.4", zorder=2)
-    m.drawmeridians(np.arange(math.floor(lon0), math.ceil(lon1) + 0.001, 1.0), labels=[0, 0, 0, 1], linewidth=0.22, dashes=[1, 0], fontsize=9, color="0.4", zorder=2)
+    m.drawmeridians(np.arange(math.floor(lon0), math.ceil(lon1) + 0.001, 1.0), labels=[0, 0, 0, 0], linewidth=0.22, dashes=[1, 0], fontsize=9, color="0.4", zorder=2)
     return m
 
 
@@ -112,7 +112,7 @@ def main() -> None:
     lon_r, lat_r, anom_r = grid_from_rows(right, "sst_anomaly")
 
     fig = plt.figure(figsize=(13.6, 10.0))
-    gs = fig.add_gridspec(2, 2, height_ratios=[1.0, 0.52], hspace=0.22, wspace=0.12)
+    gs = fig.add_gridspec(2, 2, height_ratios=[1.0, 0.52], hspace=0.30, wspace=0.12)
 
     vlim = max(float(np.nanmax(np.abs(anom_l))), float(np.nanmax(np.abs(anom_r))), 1.0)
     point_xy = None
@@ -132,8 +132,7 @@ def main() -> None:
         ax.text(px + 18000, py + 18000, "Cool-pool point", fontsize=8, color="black", zorder=6)
         ax.set_title(title, fontsize=13, pad=6)
 
-    cax = fig.add_axes([0.32, 0.455, 0.36, 0.018])
-    cbar = fig.colorbar(pcm, cax=cax, orientation="horizontal")
+    cbar = fig.colorbar(pcm, ax=fig.axes[:2], orientation="horizontal", pad=0.04, fraction=0.035, shrink=0.42)
     cbar.set_label("SST anomaly (°C)", fontsize=9)
     cbar.ax.tick_params(labelsize=9)
 

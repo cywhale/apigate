@@ -1,0 +1,4 @@
+interface:
+  display_name: "ODB Ocean Maps"
+  short_description: "Draw ocean figures from ODB SADCP, CTD, GEBCO, and MHW APIs"
+  default_prompt: "Use $odb-openapi-ocean-maps to fetch ODB open API data and build a correct oceanographic figure with Basemap."

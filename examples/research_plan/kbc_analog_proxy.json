@@ -1,35 +1,41 @@
 [
   {
     "mode": "Annual",
-    "grid_count_total": 52,
-    "grid_count_nw": 7,
-    "nw_ratio_percent": 13.461538461538462,
-    "nw_mean_speed_mps": 0.3305714285714286,
-    "all_mean_speed_mps": 0.49211538461538457,
-    "mean_u_mps": 0.1692307692307692,
-    "mean_v_mps": 0.41434615384615375,
-    "mean_direction_deg": 91.29999999999998
+    "section_lon_degE": 121.0,
+    "section_lat0_degN": 21.0,
+    "section_lat1_degN": 22.5,
+    "section_grid_count": 7,
+    "westward_grid_count": 2,
+    "westward_transport_Sv": 0.7091584940000001,
+    "westward_u_mean_mps": -0.127409,
+    "section_mean_u_mps": 0.09458428571428572,
+    "section_mean_v_mps": 0.3119605714285715,
+    "section_mean_speed_mps": 0.3759999999999999
   },
   {
     "mode": "NE Monsoon",
-    "grid_count_total": 52,
-    "grid_count_nw": 9,
-    "nw_ratio_percent": 17.307692307692307,
-    "nw_mean_speed_mps": 0.34700000000000003,
-    "all_mean_speed_mps": 0.4599615384615384,
-    "mean_u_mps": 0.1423846153846154,
-    "mean_v_mps": 0.381826923076923,
-    "mean_direction_deg": 94.76923076923077
+    "section_lon_degE": 121.0,
+    "section_lat0_degN": 21.0,
+    "section_lat1_degN": 22.5,
+    "section_grid_count": 7,
+    "westward_grid_count": 3,
+    "westward_transport_Sv": 0.880182193,
+    "westward_u_mean_mps": -0.10542366666666668,
+    "section_mean_u_mps": 0.07720785714285715,
+    "section_mean_v_mps": 0.27068785714285715,
+    "section_mean_speed_mps": 0.3517142857142857
   },
   {
     "mode": "SW Monsoon",
-    "grid_count_total": 52,
-    "grid_count_nw": 10,
-    "nw_ratio_percent": 19.23076923076923,
-    "nw_mean_speed_mps": 0.3195,
-    "all_mean_speed_mps": 0.5144807692307692,
-    "mean_u_mps": 0.1826346153846154,
-    "mean_v_mps": 0.43294230769230774,
-    "mean_direction_deg": 104.30961538461537
+    "section_lon_degE": 121.0,
+    "section_lat0_degN": 21.0,
+    "section_lat1_degN": 22.5,
+    "section_grid_count": 7,
+    "westward_grid_count": 2,
+    "westward_transport_Sv": 0.6413534820000001,
+    "westward_u_mean_mps": -0.115227,
+    "section_mean_u_mps": 0.1026752857142857,
+    "section_mean_v_mps": 0.3282854285714286,
+    "section_mean_speed_mps": 0.38557142857142856
   }
 ]

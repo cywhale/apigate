@@ -37,10 +37,11 @@ def parse_args() -> argparse.Namespace:
     p.add_argument("--mode-left", type=str, default="17")
     p.add_argument("--mode-right", type=str, default="18")
 
-    p.add_argument("--proxy-lon0", type=float, default=120.5)
-    p.add_argument("--proxy-lon1", type=float, default=121.75)
-    p.add_argument("--proxy-lat0", type=float, default=21.0)
-    p.add_argument("--proxy-lat1", type=float, default=23.5)
+    p.add_argument("--proxy-section-lon", type=float, default=121.0)
+    p.add_argument("--proxy-section-lat0", type=float, default=21.0)
+    p.add_argument("--proxy-section-lat1", type=float, default=22.5)
+    p.add_argument("--proxy-dep0", type=float, default=50.0)
+    p.add_argument("--proxy-dep1", type=float, default=150.0)
 
     p.add_argument("--gebco-sample", type=int, default=1)
     p.add_argument("--gebco-tile-deg", type=int, default=2)
@@ -261,12 +262,12 @@ def draw_gebco_layers(m: Basemap, gx: np.ndarray, gy: np.ndarray, gz: np.ndarray
     m.contour(*np.meshgrid(gx, gy), gz, levels=[-4500, -3500, -2500, -1500, -1000, -500, -200], latlon=True, colors="#274b74", linewidths=0.45, alpha=0.30, zorder=3.0)
 
 
-def draw_proxy_box(m: Basemap, args: argparse.Namespace) -> None:
-    xs = [args.proxy_lon0, args.proxy_lon1, args.proxy_lon1, args.proxy_lon0, args.proxy_lon0]
-    ys = [args.proxy_lat0, args.proxy_lat0, args.proxy_lat1, args.proxy_lat1, args.proxy_lat0]
+def draw_proxy_section(m: Basemap, args: argparse.Namespace) -> None:
+    xs = [args.proxy_section_lon, args.proxy_section_lon]
+    ys = [args.proxy_section_lat0, args.proxy_section_lat1]
     px, py = m(xs, ys)
-    m.plot(px, py, color="black", linewidth=1.9, zorder=7)
-    m.plot(px, py, color="white", linewidth=0.9, dashes=[4, 2], zorder=7.1)
+    m.plot(px, py, color="black", linewidth=2.1, zorder=7)
+    m.plot(px, py, color="white", linewidth=1.0, dashes=[4, 2], zorder=7.1)
 
 
 def plot_panel(
@@ -317,7 +318,7 @@ def plot_panel(
     vmask = np.isfinite(vx) & np.isfinite(vy) & np.isfinite(vu) & np.isfinite(vv)
     q = m.quiver(vx[vmask], vy[vmask], vu[vmask], vv[vmask], latlon=True, color="white", scale=9.5, width=0.0025, headwidth=3.5, headlength=4.4, headaxislength=4.0, zorder=5)
 
-    draw_proxy_box(m, args)
+    draw_proxy_section(m, args)
     if show_key:
         ax.quiverkey(q, 0.13, 0.50, 1.0, "1 m/s", labelpos="E", coordinates="axes", color="white")
     ax.set_title(title, fontsize=13, pad=6)
@@ -331,47 +332,74 @@ def compute_proxy(rows: list[dict], args: argparse.Namespace, mode_label: str) -
     u = to_float_array(rows, "u")
     v = to_float_array(rows, "v")
     speed = to_float_array(rows, "speed")
-    direction = to_float_array(rows, "direction")
+    if lon.size == 0:
+        return {
+            "mode": mode_label,
+            "section_lon_degE": args.proxy_section_lon,
+            "section_lat0_degN": args.proxy_section_lat0,
+            "section_lat1_degN": args.proxy_section_lat1,
+            "section_grid_count": 0,
+            "westward_grid_count": 0,
+            "westward_transport_Sv": float("nan"),
+            "westward_u_mean_mps": float("nan"),
+            "section_mean_u_mps": float("nan"),
+            "section_mean_v_mps": float("nan"),
+            "section_mean_speed_mps": float("nan"),
+        }
 
-    box_mask = (
+    lon_vals = np.unique(lon[np.isfinite(lon)])
+    if lon_vals.size == 0:
+        raise RuntimeError("Proxy rows contain no finite longitude values")
+    section_lon = float(lon_vals[np.argmin(np.abs(lon_vals - args.proxy_section_lon))])
+    grid_dlon = float(np.median(np.diff(np.sort(lon_vals)))) if lon_vals.size > 1 else 0.25
+    lon_tol = max(grid_dlon / 2.0, 0.125)
+
+    section_mask = (
         np.isfinite(lon)
         & np.isfinite(lat)
         & np.isfinite(u)
         & np.isfinite(v)
         & np.isfinite(speed)
-        & (lon >= args.proxy_lon0)
-        & (lon <= args.proxy_lon1)
-        & (lat >= args.proxy_lat0)
-        & (lat <= args.proxy_lat1)
+        & (np.abs(lon - section_lon) <= lon_tol + 1e-9)
+        & (lat >= args.proxy_section_lat0)
+        & (lat <= args.proxy_section_lat1)
     )
 
-    count_total = int(np.count_nonzero(box_mask))
+    count_total = int(np.count_nonzero(section_mask))
     if count_total == 0:
         return {
             "mode": mode_label,
-            "grid_count_total": 0,
-            "grid_count_nw": 0,
-            "nw_ratio_percent": float("nan"),
-            "nw_mean_speed_mps": float("nan"),
-            "all_mean_speed_mps": float("nan"),
-            "mean_u_mps": float("nan"),
-            "mean_v_mps": float("nan"),
-            "mean_direction_deg": float("nan"),
+            "section_lon_degE": section_lon,
+            "section_lat0_degN": args.proxy_section_lat0,
+            "section_lat1_degN": args.proxy_section_lat1,
+            "section_grid_count": 0,
+            "westward_grid_count": 0,
+            "westward_transport_Sv": float("nan"),
+            "westward_u_mean_mps": float("nan"),
+            "section_mean_u_mps": float("nan"),
+            "section_mean_v_mps": float("nan"),
+            "section_mean_speed_mps": float("nan"),
         }
 
-    nw_mask = box_mask & (u < 0.0) & (v > 0.0)
-    count_nw = int(np.count_nonzero(nw_mask))
-    ratio = 100.0 * count_nw / count_total
+    west_mask = section_mask & (u < 0.0)
+    count_west = int(np.count_nonzero(west_mask))
+    lat_vals = np.unique(lat[section_mask])
+    dlat = float(np.median(np.diff(np.sort(lat_vals)))) if lat_vals.size > 1 else 0.25
+    lat_width_m = dlat * 111320.0
+    depth_thickness_m = args.proxy_dep1 - args.proxy_dep0
+    westward_transport_sv = float(np.nansum(np.maximum(-u[west_mask], 0.0) * lat_width_m * depth_thickness_m) / 1e6)
     return {
         "mode": mode_label,
-        "grid_count_total": count_total,
-        "grid_count_nw": count_nw,
-        "nw_ratio_percent": ratio,
-        "nw_mean_speed_mps": float(np.nanmean(speed[nw_mask])) if count_nw else float("nan"),
-        "all_mean_speed_mps": float(np.nanmean(speed[box_mask])),
-        "mean_u_mps": float(np.nanmean(u[box_mask])),
-        "mean_v_mps": float(np.nanmean(v[box_mask])),
-        "mean_direction_deg": float(np.nanmean(direction[box_mask])) if np.isfinite(direction[box_mask]).any() else float("nan"),
+        "section_lon_degE": section_lon,
+        "section_lat0_degN": args.proxy_section_lat0,
+        "section_lat1_degN": args.proxy_section_lat1,
+        "section_grid_count": count_total,
+        "westward_grid_count": count_west,
+        "westward_transport_Sv": westward_transport_sv,
+        "westward_u_mean_mps": float(np.nanmean(u[west_mask])) if count_west else float("nan"),
+        "section_mean_u_mps": float(np.nanmean(u[section_mask])),
+        "section_mean_v_mps": float(np.nanmean(v[section_mask])),
+        "section_mean_speed_mps": float(np.nanmean(speed[section_mask])),
     }
 
 
@@ -390,27 +418,27 @@ def save_proxy_outputs(records: list[dict], prefix: str) -> None:
 
 def plot_proxy_chart(records: list[dict], prefix: str) -> None:
     labels = [r["mode"] for r in records]
-    ratios = [r["nw_ratio_percent"] for r in records]
-    speeds = [r["nw_mean_speed_mps"] if np.isfinite(r["nw_mean_speed_mps"]) else 0.0 for r in records]
+    transports = [r["westward_transport_Sv"] for r in records]
+    speeds = [abs(r["westward_u_mean_mps"]) if np.isfinite(r["westward_u_mean_mps"]) else 0.0 for r in records]
 
     fig, ax1 = plt.subplots(figsize=(7.8, 4.8))
     x = np.arange(len(labels))
-    bars = ax1.bar(x, ratios, color=["#d95f02", "#1b9e77", "#7570b3"], width=0.62)
+    bars = ax1.bar(x, transports, color=["#d95f02", "#1b9e77", "#7570b3"], width=0.62)
     ax1.set_xticks(x, labels)
-    ax1.set_ylabel("Northwestward grid-cell ratio (%)", fontsize=10)
-    ax1.set_ylim(0, max(max(ratios) * 1.25 if ratios else 1, 10))
+    ax1.set_ylabel("Westward transport index (Sv)", fontsize=10)
+    ax1.set_ylim(0, max(max(transports) * 1.25 if transports else 1, 0.2))
     ax1.tick_params(axis="both", labelsize=9)
     ax1.grid(axis="y", linewidth=0.3, alpha=0.4)
 
     ax2 = ax1.twinx()
     ax2.plot(x, speeds, color="black", marker="o", linewidth=1.2)
-    ax2.set_ylabel("Mean NW speed (m/s)", fontsize=10)
+    ax2.set_ylabel("Mean westward speed |u| (m/s)", fontsize=10)
     ax2.tick_params(axis="y", labelsize=9)
 
-    for rect, val in zip(bars, ratios, strict=False):
-        ax1.text(rect.get_x() + rect.get_width() / 2.0, rect.get_height() + 0.6, f"{val:.1f}", ha="center", va="bottom", fontsize=8)
+    for rect, val in zip(bars, transports, strict=False):
+        ax1.text(rect.get_x() + rect.get_width() / 2.0, rect.get_height() + 0.015, f"{val:.2f}", ha="center", va="bottom", fontsize=8)
 
-    ax1.set_title("KBC Proxy in Target Box", fontsize=12, pad=8)
+    ax1.set_title("KBC Proxy Across 121°E, 50-150 m", fontsize=12, pad=8)
     fig.tight_layout()
     fig.savefig(f"{prefix}_proxy.png", dpi=240)
     plt.close(fig)
@@ -421,12 +449,13 @@ def write_summary(records: list[dict], args: argparse.Namespace, prefix: str) ->
         "# KBC Analog Summary",
         "",
         "此輸出對應 Han et al. 2021 的 Kuroshio Branch Current 類比問題。",
-        "它使用 ODB SADCP 公開 0.25 度格點流場，觀察在目標盒區中具有西向且北向分量的格點比例。",
+        "它使用 ODB SADCP 公開 0.25 度格點流場，計算 121°E 斷面 50-150 m 的向西輸送指標。",
         "",
-        "## Proxy Box",
+        "## Proxy Section",
         "",
-        f"- lon: {args.proxy_lon0} to {args.proxy_lon1}",
-        f"- lat: {args.proxy_lat0} to {args.proxy_lat1}",
+        f"- longitude: {args.proxy_section_lon}",
+        f"- latitude range: {args.proxy_section_lat0} to {args.proxy_section_lat1}",
+        f"- depth range: {args.proxy_dep0} to {args.proxy_dep1} m",
         "",
         "## Records",
         "",
@@ -436,13 +465,14 @@ def write_summary(records: list[dict], args: argparse.Namespace, prefix: str) ->
             [
                 f"### {r['mode']}",
                 "",
-                f"- total grid cells: {r['grid_count_total']}",
-                f"- northwestward grid cells: {r['grid_count_nw']}",
-                f"- northwestward ratio: {r['nw_ratio_percent']:.2f}%",
-                f"- mean speed in target box: {r['all_mean_speed_mps']:.3f} m/s",
-                f"- mean northwestward speed: {r['nw_mean_speed_mps']:.3f} m/s" if np.isfinite(r["nw_mean_speed_mps"]) else "- mean northwestward speed: n/a",
-                f"- mean u: {r['mean_u_mps']:.3f} m/s",
-                f"- mean v: {r['mean_v_mps']:.3f} m/s",
+                f"- section longitude: {r['section_lon_degE']:.2f}°E",
+                f"- section grid cells: {r['section_grid_count']}",
+                f"- westward grid cells: {r['westward_grid_count']}",
+                f"- westward transport index: {r['westward_transport_Sv']:.3f} Sv",
+                f"- mean westward speed: {r['westward_u_mean_mps']:.3f} m/s" if np.isfinite(r["westward_u_mean_mps"]) else "- mean westward speed: n/a",
+                f"- section mean u: {r['section_mean_u_mps']:.3f} m/s",
+                f"- section mean v: {r['section_mean_v_mps']:.3f} m/s",
+                f"- section mean speed: {r['section_mean_speed_mps']:.3f} m/s",
                 "",
             ]
         )
@@ -455,6 +485,20 @@ def fetch_mode_bundle(args: argparse.Namespace, mode: str) -> tuple[list[dict], 
     return bg, vec
 
 
+def fetch_proxy_rows(args: argparse.Namespace, mode: str) -> list[dict]:
+    return fetch_sadcp(
+        args.lon0,
+        args.lon1,
+        args.lat0,
+        args.lat1,
+        args.proxy_dep0,
+        args.proxy_dep1,
+        "mean",
+        mode,
+        args.timeout,
+    )
+
+
 def main() -> None:
     args = parse_args()
     prefix = args.output_prefix
@@ -465,6 +509,9 @@ def main() -> None:
     annual_bg, annual_vec = fetch_mode_bundle(args, args.annual_mode)
     left_bg, left_vec = fetch_mode_bundle(args, args.mode_left)
     right_bg, right_vec = fetch_mode_bundle(args, args.mode_right)
+    annual_proxy = fetch_proxy_rows(args, args.annual_mode)
+    left_proxy = fetch_proxy_rows(args, args.mode_left)
+    right_proxy = fetch_proxy_rows(args, args.mode_right)
 
     all_speeds = []
     for rows in [annual_bg, left_bg, right_bg]:
@@ -502,9 +549,9 @@ def main() -> None:
 
     # Output C: proxy
     records = [
-        compute_proxy(annual_vec, args, "Annual"),
-        compute_proxy(left_vec, args, "NE Monsoon"),
-        compute_proxy(right_vec, args, "SW Monsoon"),
+        compute_proxy(annual_proxy, args, "Annual"),
+        compute_proxy(left_proxy, args, "NE Monsoon"),
+        compute_proxy(right_proxy, args, "SW Monsoon"),
     ]
     save_proxy_outputs(records, prefix)
     plot_proxy_chart(records, prefix)
@@ -515,9 +562,9 @@ def main() -> None:
     print(f"Saved {prefix}_proxy.png/.csv/.json and summary")
     for rec in records:
         print(
-            f"{rec['mode']}: nw_ratio={rec['nw_ratio_percent']:.2f}% "
-            f"nw_count={rec['grid_count_nw']}/{rec['grid_count_total']} "
-            f"mean_u={rec['mean_u_mps']:.3f} mean_v={rec['mean_v_mps']:.3f}"
+            f"{rec['mode']}: transport={rec['westward_transport_Sv']:.3f} Sv "
+            f"westward_cells={rec['westward_grid_count']}/{rec['section_grid_count']} "
+            f"mean_u={rec['section_mean_u_mps']:.3f} mean_v={rec['section_mean_v_mps']:.3f}"
         )
 
 
