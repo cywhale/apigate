@@ -59,6 +59,8 @@ Use this skill for map-making tasks based on ODB public APIs.
   - when to copy the bundled template and which config keys to edit first
 - `references/cartopy-vs-basemap.md`
   - how to choose the backend for a new figure
+- `references/parameter-cheatsheet.md`
+  - common ODB parameters and append fields; use official OAS on demand for rare cases
 
 ## Bundled Template
 

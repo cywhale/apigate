@@ -13,12 +13,33 @@ from pathlib import Path
 import matplotlib.pyplot as plt
 import numpy as np
 
-SKILL_SCRIPTS = Path(
-    os.environ.get(
-        "ODB_OCEAN_SKILL_SCRIPTS",
-        "/Users/cywhale/proj/apigate/skills/odb-openapi-ocean-maps/scripts",
+def resolve_skill_scripts() -> Path:
+    env = os.environ.get("ODB_OCEAN_SKILL_SCRIPTS")
+    if env:
+        p = Path(env).expanduser().resolve()
+        if p.exists():
+            return p
+
+    here = Path(__file__).resolve()
+    candidates = [
+        here.parent / "scripts",
+        here.parents[1] / "skills" / "odb-openapi-ocean-maps" / "scripts",
+        here.parents[2] / "skills" / "odb-openapi-ocean-maps" / "scripts",
+        Path.cwd() / "skills" / "odb-openapi-ocean-maps" / "scripts",
+    ]
+    for base in here.parents:
+        candidates.append(base / "apigate" / "skills" / "odb-openapi-ocean-maps" / "scripts")
+        candidates.append(base / "skills" / "odb-openapi-ocean-maps" / "scripts")
+    for p in candidates:
+        if p.exists():
+            return p
+    raise FileNotFoundError(
+        "Could not locate odb-openapi-ocean-maps/scripts. "
+        "Set ODB_OCEAN_SKILL_SCRIPTS or place the copied template inside a repo that contains skills/odb-openapi-ocean-maps/scripts."
     )
-)
+
+
+SKILL_SCRIPTS = resolve_skill_scripts()
 sys.path.insert(0, str(SKILL_SCRIPTS))
 
 from odb_ocean_api_helpers import (  # noqa: E402
