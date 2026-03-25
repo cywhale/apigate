@@ -1,6 +1,6 @@
 ---
 name: odb-openapi-ocean-maps
-description: Use when an agent needs to draw oceanographic maps from ODB open APIs, especially SADCP currents, CTD temperature-salinity-density fields, GEBCO bathymetry, and MHW SST or SST anomaly data, with Basemap and correct subplot/colorbar layout.
+description: Use when an agent needs to draw oceanographic maps from ODB open APIs, especially SADCP currents, CTD temperature-salinity-density fields, GEBCO bathymetry, and MHW SST or SST anomaly data, with Basemap or Cartopy and correct subplot/colorbar layout.
 ---
 
 # ODB OpenAPI Ocean Maps
@@ -12,7 +12,7 @@ Use this skill for map-making tasks based on ODB public APIs.
 - the task needs ODB `sadcp`, `ctd`, `gebco`, or `mhw`
 - the output is a scientific figure or panel, not just raw JSON
 - the agent must combine currents, hydrography, bathymetry, or SST anomaly on a map
-- the task needs Basemap-based plotting with stable colorbar layout
+- the task needs Basemap or Cartopy plotting with stable colorbar layout
 
 ## Core Workflow
 
@@ -36,6 +36,7 @@ Use this skill for map-making tasks based on ODB public APIs.
    - API fetch helpers
    - GEBCO tiled download
    - Basemap construction
+   - Cartopy construction
    - compact external colorbar helpers
 
 5. For single maps or small panel groups, prefer an external `fig.colorbar(..., ax=..., pad/fraction/shrink)`.
@@ -56,6 +57,8 @@ Use this skill for map-making tasks based on ODB public APIs.
   - what not to overclaim
 - `references/template-usage.md`
   - when to copy the bundled template and which config keys to edit first
+- `references/cartopy-vs-basemap.md`
+  - how to choose the backend for a new figure
 
 ## Bundled Template
 
@@ -63,8 +66,11 @@ Use this skill for map-making tasks based on ODB public APIs.
   - copy this into the working project when the task is a fresh single-map build
   - edit the `CONFIG` block before changing plotting logic
   - it already includes:
+    - switchable `backend` (`basemap` or `cartopy`)
     - external slim colorbar
     - optional GEBCO relief
+    - optional GEBCO hillshade toggle
+    - optional scalar background layer
     - SADCP vector count filtering
     - short-arrow defaults
     - switchable `sadcp` / `ctd` / `mhw` background source
@@ -72,7 +78,12 @@ Use this skill for map-making tasks based on ODB public APIs.
 ## Default Plotting Rules
 
 - Prefer `resolution="h"` and fall back to `resolution="i"` for Basemap.
+- Cartopy is allowed, but it is not the default backend.
+- Cartopy may download coastline resources on first use; mention that risk if the environment is fresh.
+- Cartopy has been blind-tested successfully for a large-domain Japanese-eel analogue map in this workspace, but only after `cartopy` was explicitly added to the local `uv` environment.
+- If a Cartopy figure includes a scalar background, apply the same external slim-colorbar rule used for Basemap figures.
 - Use short, thin horizontal colorbars.
+- GEBCO hillshade can stay enabled for higher visual relief, but the template should allow turning it off when a large domain becomes too slow.
 - The colorbar must sit outside the map panel, not over the data area and not jammed into the title line.
 - For upper-row maps in stacked layouts, avoid bottom longitude labels if they fight with the colorbar.
 - For large GEBCO domains, increase `sample` or reduce domain size instead of forcing `sample=1`.

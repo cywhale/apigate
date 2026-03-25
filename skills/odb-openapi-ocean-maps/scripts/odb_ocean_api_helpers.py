@@ -11,7 +11,6 @@ import matplotlib.pyplot as plt
 import numpy as np
 import requests
 from matplotlib.colors import LightSource
-from mpl_toolkits.basemap import Basemap
 
 SADCP_API = "https://ecodata.odb.ntu.edu.tw/api/sadcp"
 CTD_API = "https://ecodata.odb.ntu.edu.tw/api/ctd"
@@ -149,7 +148,8 @@ def build_basemap(
     show_bottom_lon_labels=True,
     parallel_step=1.0,
     meridian_step=1.0,
-) -> Basemap:
+) -> object:
+    from mpl_toolkits.basemap import Basemap
     try:
         m = Basemap(projection="merc", llcrnrlon=lon0, urcrnrlon=lon1, llcrnrlat=lat0, urcrnrlat=lat1, resolution=resolution, ax=ax, fix_aspect=True)
     except OSError:
@@ -164,7 +164,51 @@ def build_basemap(
     return m
 
 
-def draw_gebco_relief(m: Basemap, lon: np.ndarray, lat: np.ndarray, z: np.ndarray) -> None:
+def build_cartopy_map(
+    ax: plt.Axes,
+    *,
+    lon0,
+    lon1,
+    lat0,
+    lat1,
+    resolution="i",
+    show_lat_labels=True,
+    show_bottom_lon_labels=True,
+    parallel_step=1.0,
+    meridian_step=1.0,
+):
+    import cartopy.crs as ccrs
+    import cartopy.feature as cfeature
+    import matplotlib.ticker as mticker
+
+    ax.set_extent([lon0, lon1, lat0, lat1], crs=ccrs.PlateCarree())
+    scale_map = {"f": "f", "h": "h", "i": "i", "l": "l", "c": "c"}
+    scale = scale_map.get(resolution, "i")
+    gshhs = cfeature.GSHHSFeature(scale=scale, levels=[1], edgecolor="0.2", facecolor="#d7d7d7")
+    ax.add_feature(gshhs, zorder=6, linewidth=0.8)
+    ax.patch.set_facecolor("#f8fbff")
+
+    gl = ax.gridlines(crs=ccrs.PlateCarree(), draw_labels=True, linewidth=0.22, color="0.4", linestyle="--")
+    gl.top_labels = False
+    gl.right_labels = False
+    gl.left_labels = show_lat_labels
+    gl.bottom_labels = show_bottom_lon_labels
+    gl.xlocator = mticker.FixedLocator(np.arange(math.floor(lon0), math.ceil(lon1) + 0.001, meridian_step))
+    gl.ylocator = mticker.FixedLocator(np.arange(math.floor(lat0), math.ceil(lat1) + 0.001, parallel_step))
+    gl.xlabel_style = {"size": 9}
+    gl.ylabel_style = {"size": 9}
+    return ax
+
+
+def draw_gebco_relief(
+    m_or_ax,
+    lon: np.ndarray,
+    lat: np.ndarray,
+    z: np.ndarray,
+    backend="basemap",
+    hillshade=True,
+    hillshade_alpha=0.22,
+) -> None:
     gx, gy, ggrid = xyz_to_grid(lon, lat, z)
     gx_e, gy_e = centers_to_edges(gx), centers_to_edges(gy)
     gx_e2d, gy_e2d = np.meshgrid(gx_e, gy_e)
@@ -175,14 +219,30 @@ def draw_gebco_relief(m: Basemap, lon: np.ndarray, lat: np.ndarray, z: np.ndarra
     lat_mid = float(np.mean(gy)) if gy.size else 0.0
     dx_m = max(dx_deg * 111320.0 * math.cos(math.radians(lat_mid)), 1.0)
     dy_m = max(dy_deg * 111320.0, 1.0)
-    hill = LightSource(azdeg=320, altdeg=35).hillshade(np.nan_to_num(ggrid, nan=float(np.nanmedian(ggrid))), vert_exag=2.0, dx=dx_m, dy=dy_m)
+    hill = None
+    if hillshade:
+        hill = LightSource(azdeg=320, altdeg=35).hillshade(np.nan_to_num(ggrid, nan=float(np.nanmedian(ggrid))), vert_exag=2.0, dx=dx_m, dy=dy_m)
+    ocean_kwargs = {"cmap": "GnBu", "alpha": 0.55, "zorder": 2.5, "shading": "flat"}
+    land_kwargs = {"cmap": "gist_earth", "alpha": 0.44, "zorder": 2.6, "shading": "flat"}
+    hill_kwargs = {"cmap": "gray", "vmin": 0, "vmax": 1, "alpha": hillshade_alpha, "zorder": 2.8, "shading": "flat"}
+    if backend == "cartopy":
+        import cartopy.crs as ccrs
+
+        ocean_kwargs["transform"] = ccrs.PlateCarree()
+        land_kwargs["transform"] = ccrs.PlateCarree()
+        hill_kwargs["transform"] = ccrs.PlateCarree()
+    else:
+        ocean_kwargs["latlon"] = True
+        land_kwargs["latlon"] = True
+        hill_kwargs["latlon"] = True
     if ocean_depth.count() > 0:
         vmax = float(np.nanpercentile(ocean_depth.compressed(), 99.4))
-        m.pcolormesh(gx_e2d, gy_e2d, ocean_depth, latlon=True, cmap="GnBu", vmin=0, vmax=max(vmax, 1000.0), alpha=0.55, zorder=2.5, shading="flat")
+        m_or_ax.pcolormesh(gx_e2d, gy_e2d, ocean_depth, vmin=0, vmax=max(vmax, 1000.0), **ocean_kwargs)
     if land_elev.count() > 0:
         vmax = float(np.nanpercentile(land_elev.compressed(), 99.5))
-        m.pcolormesh(gx_e2d, gy_e2d, land_elev, latlon=True, cmap="gist_earth", vmin=0, vmax=max(vmax, 300.0), alpha=0.44, zorder=2.6, shading="flat")
-    m.pcolormesh(gx_e2d, gy_e2d, hill, latlon=True, cmap="gray", vmin=0, vmax=1, alpha=0.22, zorder=2.8, shading="flat")
+        m_or_ax.pcolormesh(gx_e2d, gy_e2d, land_elev, vmin=0, vmax=max(vmax, 300.0), **land_kwargs)
+    if hill is not None:
+        m_or_ax.pcolormesh(gx_e2d, gy_e2d, hill, **hill_kwargs)
 
 
 def add_bottom_cbar(fig: plt.Figure, mappable, *, left=0.39, bottom=0.10, width=0.22, height=0.013, label="", fontsize=9):

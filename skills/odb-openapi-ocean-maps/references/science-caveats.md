@@ -7,5 +7,6 @@
   - sharp eddy-edge geometry
   - claims that require unpublished or event-specific data
 - If current vectors are sparse in a region, leave them sparse.
+- If switching from Basemap to Cartopy, do not assume the coastline style will match exactly; verify that the new rendering still serves the scientific reading of the figure.
 - If a published reference figure was built from a model or data-assimilative reanalysis, do not claim that an ODB observation-based analogue should look equally smooth or spatially complete.
 - If a figure is only an explanatory analogue, say that explicitly in the figure caption or summary.

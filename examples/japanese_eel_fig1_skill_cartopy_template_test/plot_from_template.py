@@ -36,17 +36,17 @@ from odb_ocean_api_helpers import (  # noqa: E402
 
 
 CONFIG = {
-    "output": "ocean_map_template_output.png",
-    "backend": "basemap",  # basemap | cartopy
-    "title": "ODB Ocean Map",
-    "caption": "Public-data ocean map created from ODB open APIs.",
-    "domain": {"lon0": 120.0, "lon1": 123.0, "lat0": 21.0, "lat1": 26.0},
-    "grid": {"parallel_step": 1.0, "meridian_step": 1.0},
+    "output": "japanese_eel_fig1_skill_cartopy_template.png",
+    "backend": "cartopy",  # basemap | cartopy
+    "title": "Japanese Eel Spawning Area and Drifting Currents (30-100 m, Cartopy Template)",
+    "caption": "Template-based blind test of the integrated skill with a scalar background and external colorbar.",
+    "domain": {"lon0": 115.0, "lon1": 160.0, "lat0": 5.0, "lat1": 45.0},
+    "grid": {"parallel_step": 10.0, "meridian_step": 10.0},
     "gebco": {
         "enabled": True,
-        "sample": 1,
-        "tile_deg": 2,
-        "cache": "gebco_template.npz",
+        "sample": 4,
+        "tile_deg": 4,
+        "cache": "gebco_cartopy_template_test.npz",
         "hillshade": True,
         "hillshade_alpha": 0.22,
     },
@@ -55,8 +55,8 @@ CONFIG = {
         "source": "sadcp",  # sadcp | ctd | mhw
         "field": "speed",  # sadcp: speed/u/v ; ctd: temperature/salinity/density ; mhw: sst/sst_anomaly/level
         "mode": "0",
-        "dep0": 20,
-        "dep1": 300,
+        "dep0": 30,
+        "dep1": 100,
         "dep_mode": "mean",
         "start": None,
         "end": None,
@@ -66,27 +66,27 @@ CONFIG = {
             "cmap": "jet",
             "vmin": 0.0,
             "vmax": 1.2,
-            "size": 85,
-            "alpha": 0.95,
+            "size": 42,
+            "alpha": 0.88,
             "label": "Current speed (m/s)",
         },
     },
     "vectors": {
         "enabled": True,
         "mode": "0",
-        "dep0": 25,
-        "dep1": 35,
+        "dep0": 30,
+        "dep1": 100,
         "dep_mode": "mean",
         "count_threshold": 30,
-        "scale": 26.0,
-        "color": "white",
-        "width": 0.0021,
-        "headwidth": 3.0,
-        "headlength": 4.0,
-        "quiverkey": {"enabled": True, "x": 0.12, "y": 0.11, "speed": 0.5, "label": "0.5 m/s"},
+        "scale": 28.0,
+        "color": "0.5",
+        "width": 0.0018,
+        "headwidth": 2.8,
+        "headlength": 3.6,
+        "quiverkey": {"enabled": True, "x": 0.12, "y": 0.08, "speed": 0.5, "label": "0.5 m/s"},
     },
     "colorbar": {"pad": 0.04, "fraction": 0.035, "shrink": 0.48, "fontsize": 10, "tick_fontsize": 9},
-    "figure": {"figsize": (10.5, 8.2), "top": 0.91, "bottom": 0.13},
+    "figure": {"figsize": (10.8, 8.5), "top": 0.92, "bottom": 0.13},
 }
 
 
