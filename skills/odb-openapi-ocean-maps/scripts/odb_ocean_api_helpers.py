@@ -28,7 +28,18 @@ def fetch_list(url: str, params: dict, timeout: int = 90) -> list[dict]:
 
 
 def fetch_sadcp(*, lon0, lon1, lat0, lat1, dep0, dep1, dep_mode="mean", mode="0", append="u,v,speed,direction,count", timeout=90):
-    return fetch_list(SADCP_API, locals(), timeout=timeout)
+    params = {
+        "lon0": lon0,
+        "lon1": lon1,
+        "lat0": lat0,
+        "lat1": lat1,
+        "dep0": dep0,
+        "dep1": dep1,
+        "dep_mode": dep_mode,
+        "mode": mode,
+        "append": append,
+    }
+    return fetch_list(SADCP_API, params, timeout=timeout)
 
 
 def fetch_ctd(*, lon0, lon1=None, lat0=None, lat1=None, dep0=0, dep1=None, dep_mode=None, mode="0", append="temperature,salinity,density,count", timeout=90):

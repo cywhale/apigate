@@ -2,9 +2,17 @@
 
 Use this note when choosing the plotting backend for an ODB ocean map.
 
+## Decision Rule
+
+1. If the task extends an existing Basemap example in this repo, use `basemap`.
+2. If the environment does not already have `cartopy`, use `basemap`.
+3. If the domain is large and you are starting a new figure, prefer `cartopy` if the environment supports it.
+4. If speed and lowest workflow risk matter most, use `basemap`.
+5. If long-term maintainability matters more than matching older scripts, prefer `cartopy`.
+
 ## Basemap
 
-Prefer Basemap when:
+Choose Basemap when:
 
 - the environment already supports `basemap` and you need the most stable path
 - the task is based on existing Basemap examples in this repo
@@ -24,12 +32,12 @@ Weaknesses:
 
 ## Cartopy
 
-Prefer Cartopy when:
+Choose Cartopy when:
 
 - the environment already has `cartopy`
-- long-term maintainability matters more than matching old Basemap code
-- the task is a new map rather than an extension of an older Basemap script
-- you want a backend that is still actively maintained
+- the task is a new figure rather than an extension of an old Basemap script
+- the map domain is large enough that Cartopy's maintained projection stack is worth using
+- long-term maintainability matters more than matching older outputs
 
 Strengths:
 
@@ -45,12 +53,11 @@ Weaknesses:
 - coastline appearance is not identical to Basemap and must be visually checked
 - if `cartopy` is missing from the local `uv` environment, the script will fail immediately
 
-## Practical Rule
+## After Switching Backend
 
-- Default to `basemap` for continuity and low risk.
-- Choose `cartopy` when the environment supports it and the task benefits from a maintained backend.
-- After switching backend, always re-check:
-  - coastline readability
-  - vector density
-  - colorbar placement
-  - caption honesty about observation coverage
+Always re-check:
+
+- coastline readability
+- vector density
+- colorbar placement
+- caption honesty about observation coverage

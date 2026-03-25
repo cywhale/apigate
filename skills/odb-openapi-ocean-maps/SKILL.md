@@ -47,6 +47,20 @@ Use this skill for map-making tasks based on ODB public APIs.
    - they are not raw-cruise or event-level reproduction unless the data truly support that claim
    - if a reference figure is based on model or reanalysis fields, expect the public ODB analogue to look rougher and less spatially complete
 
+## Quick Validation
+
+Before launching a large figure job, do a cheap validation first:
+
+1. call the target API on a small box
+2. confirm the payload is non-empty
+3. only then run the full-domain figure
+
+## Network Failure Handling
+
+- If API fetch fails because the environment has no network access, stop and report that clearly.
+- Do not fabricate, interpolate, or silently replace ODB data with synthetic values.
+- If official OAS pages are reachable but the API itself is not, say so explicitly and ask for a runnable environment or a provided data file.
+
 ## Read These References As Needed
 
 - `references/api-patterns.md`

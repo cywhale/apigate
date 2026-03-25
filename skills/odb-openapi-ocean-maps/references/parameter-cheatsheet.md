@@ -12,6 +12,8 @@ Use this file for common cases. If you need uncommon parameters, open the offici
   - `mode=0` for annual mean
   - `mode=17` for NE monsoon
   - `mode=18` for SW monsoon
+  - monthly modes may exist; do not guess the full list from memory
+  - if you need a specific month mode, verify it against the official OAS before using it
 - Common `append` fields:
   - `u`, `v`, `speed`, `direction`, `count`
 
@@ -26,6 +28,7 @@ Official OAS:
   - `dep0`, `dep1`, `dep_mode=mean`
 - Common temporal selector:
   - `mode=0` for annual mean
+  - monthly modes may exist; verify them in the official OAS before use
 - Common `append` fields:
   - `temperature`, `salinity`, `density`, `count`
 
