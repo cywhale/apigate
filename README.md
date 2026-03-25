@@ -21,6 +21,20 @@
 [![Demo_by_CTD_API](https://github.com/cywhale/ODB/blob/master/img/ctd_api_demo_byGMT01.png)](https://github.com/cywhale/ODB/blob/master/img/ctd_api_demo_byGMT01.png)<br/>
 *Use the CTD mean data queried by the ODB CTD API to plot the sea temperature and salinity distribution in the waters around Taiwan and the sea temperature, salinity and density profiles along 22°N.*
 
+#### Skill (for AI agent)
+
+You can also load [skills/odb-openapi-ocean-maps](skills/odb-openapi-ocean-maps/SKILL.md) into the `skills/` folder used by your AI agent, so the agent can call ODB SADCP/CTD/GEBCO/MHW APIs and generate oceanographic maps with Basemap or Cartopy.
+
+Prompt example:
+
+* `Use the odb-openapi-ocean-maps skill to draw a current map from ODB SADCP API for the Kuroshio east of Taiwan.`
+
+Reference example:
+
+* See [examples/japanese_eel_fig1_skill_cartopy_test](examples/japanese_eel_fig1_skill_cartopy_test) and [examples/japanese_eel_fig1_skill_cartopy_template_test](examples/japanese_eel_fig1_skill_cartopy_template_test) for a reproduction-style example based on:
+  Chang, YL.K., Miyazawa, Y., Miller, M.J. et al. Potential impact of ocean circulation on the declining Japanese eel catches. *Sci Rep* 8, 5496 (2018). [https://doi.org/10.1038/s41598-018-23820-6](https://doi.org/10.1038/s41598-018-23820-6)
+* Please note that the original figure used reanalysis/model circulation fields, while the examples in this repo use public ODB observation-based mean fields. The reproduced maps therefore keep the same scientific theme, but are not expected to be visually identical to the published figure.
+
 #### Attribution              
 
 Reference: 
@@ -34,4 +48,3 @@ Reference:
     * Ocean Data Bank, National Science and Technology Council, Taiwan. https://doi.org/10.5281/zenodo.7512112. Accessed DAY/MONTH/YEAR from ecodata.odb.ntu.edu.tw/api/sadcp. v1.0.
 
     * Ocean Data Bank, National Science and Technology Council, Taiwan. https://doi.org/10.5281/zenodo.7512112. Accessed DAY/MONTH/YEAR from ecodata.odb.ntu.edu.tw/api/ctd. v1.0.
-

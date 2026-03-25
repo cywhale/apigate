@@ -25,7 +25,6 @@ from odb_ocean_api_helpers import (  # noqa: E402
     add_slim_colorbar,
     build_basemap,
     build_cartopy_map,
-    centers_to_edges,
     draw_gebco_relief,
     fetch_ctd,
     fetch_gebco_tiled,
@@ -37,22 +36,28 @@ from odb_ocean_api_helpers import (  # noqa: E402
 
 
 CONFIG = {
-    "output": "japanese_eel_fig1_skill_cartopy_template.png",
+    "output": "japanese_eel_fig1_skill_cartopy_gebco_cbar.png",
     "backend": "cartopy",  # basemap | cartopy
-    "title": "Japanese Eel Spawning Area and Drifting Currents (30-100 m, Cartopy Template)",
-    "caption": "Template-based blind test of the integrated skill with a scalar current background and external colorbar.",
+    "title": "Japanese Eel Spawning Area and Drifting Currents (GEBCO Colorbar Test)",
+    "caption": "Blind test for GEBCO-only colorbar support after disabling scalar background.",
     "domain": {"lon0": 115.0, "lon1": 160.0, "lat0": 5.0, "lat1": 45.0},
     "grid": {"parallel_step": 10.0, "meridian_step": 10.0},
     "gebco": {
         "enabled": True,
         "sample": 4,
         "tile_deg": 4,
-        "cache": "gebco_cartopy_template_test.npz",
+        "cache": "gebco_cartopy_gebco_cbar_test.npz",
         "hillshade": True,
         "hillshade_alpha": 0.22,
+        "ocean_cmap": "GnBu",
+        "land_cmap": "gist_earth",
+        "colorbar": {
+            "enabled": True,
+            "label": "Bathymetry (m)",
+        },
     },
     "background": {
-        "enabled": True,
+        "enabled": False,
         "source": "sadcp",  # sadcp | ctd | mhw
         "field": "speed",  # sadcp: speed/u/v ; ctd: temperature/salinity/density ; mhw: sst/sst_anomaly/level
         "mode": "0",
@@ -63,27 +68,28 @@ CONFIG = {
         "end": None,
         "append": None,
         "style": {
-            "kind": "pcolormesh",  # scatter | pcolormesh
+            "kind": "scatter",  # scatter | pcolormesh
             "cmap": "jet",
             "vmin": 0.0,
             "vmax": 1.2,
-            "size": 42,
-            "alpha": 0.88,
+            "size": 85,
+            "alpha": 0.95,
             "label": "Current speed (m/s)",
         },
     },
     "vectors": {
-        "enabled": False,
+        "enabled": True,
         "mode": "0",
         "dep0": 30,
         "dep1": 100,
         "dep_mode": "mean",
         "count_threshold": 30,
-        "scale": 28.0,
+        "scale": 26.0,
         "color": "0.5",
         "width": 0.0018,
         "headwidth": 2.8,
         "headlength": 3.6,
+        "stride": 1,
         "quiverkey": {"enabled": True, "x": 0.12, "y": 0.08, "speed": 0.5, "label": "0.5 m/s"},
     },
     "colorbar": {"pad": 0.04, "fraction": 0.035, "shrink": 0.48, "fontsize": 10, "tick_fontsize": 9},
@@ -175,15 +181,13 @@ def draw_background(m_or_ax, lon: np.ndarray, lat: np.ndarray, val: np.ndarray, 
     yi = {v: i for i, v in enumerate(uy)}
     for x0, y0, z0 in zip(lon, lat, val, strict=False):
         grid[yi[y0], xi[x0]] = z0
-    xe = centers_to_edges(ux)
-    ye = centers_to_edges(uy)
-    xx, yy = np.meshgrid(xe, ye)
+    xx, yy = np.meshgrid(ux, uy)
     kwargs = {
         "cmap": style["cmap"],
         "vmin": style["vmin"],
         "vmax": style["vmax"],
         "alpha": style["alpha"],
-        "shading": "flat",
+        "shading": "auto",
         "zorder": 3.8,
     }
     if backend == "basemap":
@@ -219,6 +223,18 @@ def draw_vectors(m_or_ax, cfg: dict) -> None:
     mask = np.isfinite(lon) & np.isfinite(lat) & np.isfinite(u) & np.isfinite(v) & np.isfinite(count) & (count >= cfg["count_threshold"])
     if not np.any(mask):
         return
+    stride = max(int(cfg.get("stride", 1)), 1)
+    if stride > 1:
+        idx = np.flatnonzero(mask)[::stride]
+        lon = lon[idx]
+        lat = lat[idx]
+        u = u[idx]
+        v = v[idx]
+    else:
+        lon = lon[mask]
+        lat = lat[mask]
+        u = u[mask]
+        v = v[mask]
     kwargs = {
         "color": cfg["color"],
         "scale": cfg["scale"],
@@ -228,7 +244,7 @@ def draw_vectors(m_or_ax, cfg: dict) -> None:
         "zorder": 5,
     }
     if CONFIG["backend"] == "basemap":
-        q = m_or_ax.quiver(lon[mask], lat[mask], u[mask], v[mask], latlon=True, **kwargs)
+        q = m_or_ax.quiver(lon, lat, u, v, latlon=True, **kwargs)
         if cfg["quiverkey"]["enabled"]:
             m_or_ax.ax.quiverkey(
                 q,
@@ -244,7 +260,7 @@ def draw_vectors(m_or_ax, cfg: dict) -> None:
 
     import cartopy.crs as ccrs
 
-    q = m_or_ax.quiver(lon[mask], lat[mask], u[mask], v[mask], transform=ccrs.PlateCarree(), **kwargs)
+    q = m_or_ax.quiver(lon, lat, u, v, transform=ccrs.PlateCarree(), **kwargs)
     if cfg["quiverkey"]["enabled"]:
         m_or_ax.quiverkey(
             q,
@@ -302,7 +318,7 @@ def main() -> None:
             tile_deg=CONFIG["gebco"]["tile_deg"],
             cache_path=CONFIG["gebco"]["cache"],
         )
-        draw_gebco_relief(
+        ocean_mesh = draw_gebco_relief(
             m_or_ax,
             glon,
             glat,
@@ -310,7 +326,22 @@ def main() -> None:
             backend=CONFIG["backend"],
             hillshade=CONFIG["gebco"].get("hillshade", True),
             hillshade_alpha=CONFIG["gebco"].get("hillshade_alpha", 0.22),
+            ocean_cmap=CONFIG["gebco"].get("ocean_cmap", "GnBu"),
+            land_cmap=CONFIG["gebco"].get("land_cmap", "gist_earth"),
         )
+        if CONFIG["gebco"].get("colorbar", {}).get("enabled", False) and ocean_mesh is not None:
+            add_slim_colorbar(
+                fig,
+                ocean_mesh,
+                ax=ax,
+                orientation="horizontal",
+                pad=CONFIG["colorbar"]["pad"],
+                fraction=CONFIG["colorbar"]["fraction"],
+                shrink=CONFIG["colorbar"]["shrink"],
+                label=CONFIG["gebco"]["colorbar"].get("label", "Bathymetry (m)"),
+                fontsize=CONFIG["colorbar"]["fontsize"],
+                tick_fontsize=CONFIG["colorbar"]["tick_fontsize"],
+            )
 
     if CONFIG["background"].get("enabled", True):
         lon, lat, val = build_background(CONFIG["background"])

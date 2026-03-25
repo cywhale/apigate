@@ -14,6 +14,7 @@
   - treat `count` as a simple quality screen; a practical default is `count >= 30`
   - allow the count threshold to remain user-adjustable
   - in shallow shelves or narrow straits, a narrower subsurface layer such as `30-100 m` can be cleaner than `0-200 m`
+  - if a large domain becomes too crowded, use a vector `stride` parameter as an explicit display choice rather than silently dropping points
 
 Example:
 
@@ -41,6 +42,10 @@ lon0=117&lon1=122&lat0=18&lat1=22&dep0=50&dep1=150&dep_mode=mean&mode=5&append=t
 - Endpoint: `https://api.odb.ntu.edu.tw/gebco`
 - Use polygon mode with tiled fetches.
 - For large domains, do not insist on `sample=1`.
+- Rule of thumb:
+  - small domains can keep `sample=1`
+  - large domains may still keep finer sampling if visual quality matters more than speed
+  - for very large domains, try `sample=4` or `sample=5` before assuming the API or plotting pipeline is broken
 
 Example:
 

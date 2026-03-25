@@ -70,8 +70,11 @@ Use this skill for map-making tasks based on ODB public APIs.
     - external slim colorbar
     - optional GEBCO relief
     - optional GEBCO hillshade toggle
+    - configurable GEBCO ocean and land colormaps
+    - optional GEBCO colorbar
     - optional scalar background layer
     - SADCP vector count filtering
+    - optional vector stride decimation
     - short-arrow defaults
     - switchable `sadcp` / `ctd` / `mhw` background source
 
@@ -82,8 +85,11 @@ Use this skill for map-making tasks based on ODB public APIs.
 - Cartopy may download coastline resources on first use; mention that risk if the environment is fresh.
 - Cartopy has been blind-tested successfully for a large-domain Japanese-eel analogue map in this workspace, but only after `cartopy` was explicitly added to the local `uv` environment.
 - If a Cartopy figure includes a scalar background, apply the same external slim-colorbar rule used for Basemap figures.
+- For gridded scalar fields, prefer grid-cell filling rather than overlapping colored circles.
 - Use short, thin horizontal colorbars.
 - GEBCO hillshade can stay enabled for higher visual relief, but the template should allow turning it off when a large domain becomes too slow.
+- If vectors are white and GEBCO uses a pale shallow-water colormap such as `GnBu`, check coastal readability before delivery.
+- Do not decimate vectors by default. If the domain is too crowded, expose stride as a parameter and say so explicitly.
 - The colorbar must sit outside the map panel, not over the data area and not jammed into the title line.
 - For upper-row maps in stacked layouts, avoid bottom longitude labels if they fight with the colorbar.
 - For large GEBCO domains, increase `sample` or reduce domain size instead of forcing `sample=1`.

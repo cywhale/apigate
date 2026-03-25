@@ -208,7 +208,9 @@ def draw_gebco_relief(
     backend="basemap",
     hillshade=True,
     hillshade_alpha=0.22,
-) -> None:
+    ocean_cmap="GnBu",
+    land_cmap="gist_earth",
+) -> object | None:
     gx, gy, ggrid = xyz_to_grid(lon, lat, z)
     gx_e, gy_e = centers_to_edges(gx), centers_to_edges(gy)
     gx_e2d, gy_e2d = np.meshgrid(gx_e, gy_e)
@@ -222,8 +224,8 @@ def draw_gebco_relief(
     hill = None
     if hillshade:
         hill = LightSource(azdeg=320, altdeg=35).hillshade(np.nan_to_num(ggrid, nan=float(np.nanmedian(ggrid))), vert_exag=2.0, dx=dx_m, dy=dy_m)
-    ocean_kwargs = {"cmap": "GnBu", "alpha": 0.55, "zorder": 2.5, "shading": "flat"}
-    land_kwargs = {"cmap": "gist_earth", "alpha": 0.44, "zorder": 2.6, "shading": "flat"}
+    ocean_kwargs = {"cmap": ocean_cmap, "alpha": 0.55, "zorder": 2.5, "shading": "flat"}
+    land_kwargs = {"cmap": land_cmap, "alpha": 0.44, "zorder": 2.6, "shading": "flat"}
     hill_kwargs = {"cmap": "gray", "vmin": 0, "vmax": 1, "alpha": hillshade_alpha, "zorder": 2.8, "shading": "flat"}
     if backend == "cartopy":
         import cartopy.crs as ccrs
@@ -235,14 +237,16 @@ def draw_gebco_relief(
         ocean_kwargs["latlon"] = True
         land_kwargs["latlon"] = True
         hill_kwargs["latlon"] = True
+    ocean_mesh = None
     if ocean_depth.count() > 0:
         vmax = float(np.nanpercentile(ocean_depth.compressed(), 99.4))
-        m_or_ax.pcolormesh(gx_e2d, gy_e2d, ocean_depth, vmin=0, vmax=max(vmax, 1000.0), **ocean_kwargs)
+        ocean_mesh = m_or_ax.pcolormesh(gx_e2d, gy_e2d, ocean_depth, vmin=0, vmax=max(vmax, 1000.0), **ocean_kwargs)
     if land_elev.count() > 0:
         vmax = float(np.nanpercentile(land_elev.compressed(), 99.5))
         m_or_ax.pcolormesh(gx_e2d, gy_e2d, land_elev, vmin=0, vmax=max(vmax, 300.0), **land_kwargs)
     if hill is not None:
         m_or_ax.pcolormesh(gx_e2d, gy_e2d, hill, **hill_kwargs)
+    return ocean_mesh
 
 
 def add_bottom_cbar(fig: plt.Figure, mappable, *, left=0.39, bottom=0.10, width=0.22, height=0.013, label="", fontsize=9):

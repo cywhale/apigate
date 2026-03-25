@@ -4,7 +4,7 @@
 
 參考文獻：
 
-- Chang et al. 2018, *Potential impact of ocean circulation on the declining Japanese eel catches*
+- Chang, YL.K., Miyazawa, Y., Miller, M.J. et al. Potential impact of ocean circulation on the declining Japanese eel catches. *Sci Rep* 8, 5496 (2018). https://doi.org/10.1038/s41598-018-23820-6
 
 參考圖：
 
