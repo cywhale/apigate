@@ -8,13 +8,19 @@ import fs from 'fs'
 import { Readable } from 'node:stream'
 
 export default async function (fastify, opts) {
+  const {
+    enableDatabase = true,
+    enableDeprecatedApis = true,
+    enableStartupCacheProbe = true
+  } = opts
+
   fastify.decorate('conf', {
     node_env: process.env.NODE_ENV || 'development',
     port: 3023 //process.env.PORT || 3000,
   })
 
 //fastify.register(db, { url: fastify.config.MONGO_CONNECT }) //use mongoose
-  fastify.register(mercurius, {
+  if (enableDeprecatedApis) fastify.register(mercurius, {
         schema: schema,
         resolvers: resolvers,
         graphiql: true,
@@ -24,7 +30,7 @@ export default async function (fastify, opts) {
         //queryDepth: 11
   })
 
-  fastify.register(import('./config/knexconn.js'), {
+  if (enableDatabase) fastify.register(import('./config/knexconn.js'), {
     knexName: 'sqldb',
     knexOptions: {
       client: 'mssql',
@@ -74,6 +80,7 @@ export default async function (fastify, opts) {
     max: 40000,
     ttl: 1000 * 60 * 60 * 72
   }).ready(async () => {
+    if (!enableStartupCacheProbe) return
     try {
       const { streamCache } = fastify
       fastify.log.info({actor: 'streamBufferCache'}, 'Test key...')
@@ -193,11 +200,13 @@ export default async function (fastify, opts) {
 
   fastify.register(AutoLoad, {
     dir: join(import.meta.url, 'plugins'),
+    ignorePattern: enableDeprecatedApis ? undefined : /(?:cache|redis)\.js$/,
     options: Object.assign({}, opts)
   })
 
   fastify.register(AutoLoad, {
     dir: join(import.meta.url, 'routes'),
+    ignorePattern: enableDeprecatedApis ? undefined : /odbio\.mjs$/,
     dirNameRoutePrefix: false,
     options: Object.assign({}, opts)
   })
