@@ -1,7 +1,7 @@
 import AutoLoad from '@fastify/autoload'
 import Cors from '@fastify/cors'
 import { join } from 'desm'
-import fs from 'fs'
+import fs from 'node:fs'
 import { Readable } from 'node:stream'
 
 export default async function (fastify, opts) {
@@ -167,7 +167,7 @@ export default async function (fastify, opts) {
     return (req, callback) => {
       const corsOptions = {
         origin: true,
-        credentials: true,
+        credentials: false,
         preflight: true,
         preflightContinue: true,
         methods: ['GET', 'POST', 'OPTIONS'],

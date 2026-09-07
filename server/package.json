@@ -6,7 +6,7 @@
 	"main": "index.mjs",
 	"scripts": {
 		"start": "export NODE_OPTIONS=--max_old_space_size=8192 && node --watch ./src/index.mjs",
-		"prod": "export NODE_OPTIONS=--max_old_space_size=8192 && export NODE_ENV=production && node --watch ./src/index.mjs",
+		"prod": "export NODE_OPTIONS=--max_old_space_size=8192 && export NODE_ENV=production && node ./src/index.mjs",
 		"test": "node --test tests/*.test.mjs"
 	},
 	"keywords": [
@@ -27,7 +27,6 @@
 		"fastify": "^5.6.2",
 		"fastify-plugin": "^5.1.0",
 		"fluent-json-schema": "5.0.0",
-		"fs": "0.0.1-security",
 		"knex": "^3.1.0",
 		"lru-cache": "^11.2.4",
 		"tedious": "^19.1.3"

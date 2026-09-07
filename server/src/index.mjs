@@ -1,5 +1,5 @@
 'use strict'
-import { readFileSync } from 'fs'
+import { readFileSync } from 'node:fs'
 import { join } from 'desm'
 import buildApp from './app.mjs'
 
