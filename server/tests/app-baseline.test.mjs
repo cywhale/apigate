@@ -6,9 +6,7 @@ import buildApp from '../src/app.mjs'
 const testConfig = {
   SQLSERVER: '127.0.0.1', SQLPORT: 1433, SQLDBNAME: 'test',
   SQLUSER: 'test', SQLPASS: 'test', TABLE_CTD: 'ctd', TABLE_SADCP: 'sadcp',
-  DOMAIN: 'localhost', BIOQRY_HOST: 'localhost', BIOQRY_BASE: 'bio',
-  BIOQRY_GETBIO: 'occurrence', BIOQRY_GETSCI: 'taxonomy', BIOUSER: 'test',
-  BIODB_HOST: 'localhost', BIODB: 'bio', FISHDB_HOST: 'localhost', FISHDB: 'fish'
+  DOMAIN: 'localhost'
 }
 
 const createTestApp = () => buildApp({
@@ -16,7 +14,6 @@ const createTestApp = () => buildApp({
   envData: testConfig,
   appOptions: {
     enableDatabase: false,
-    enableDeprecatedApis: false,
     enableStartupCacheProbe: false
   }
 })

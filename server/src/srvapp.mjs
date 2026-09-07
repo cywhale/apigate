@@ -1,16 +1,12 @@
 import AutoLoad from '@fastify/autoload'
 import Cors from '@fastify/cors'
 import { join } from 'desm'
-import mercurius from 'mercurius'
-import schema from './graphql/schema.mjs'
-import resolvers from './graphql/resolvers.mjs'
 import fs from 'fs'
 import { Readable } from 'node:stream'
 
 export default async function (fastify, opts) {
   const {
     enableDatabase = true,
-    enableDeprecatedApis = true,
     enableStartupCacheProbe = true
   } = opts
 
@@ -19,16 +15,6 @@ export default async function (fastify, opts) {
     port: 3023 //process.env.PORT || 3000,
   })
 
-//fastify.register(db, { url: fastify.config.MONGO_CONNECT }) //use mongoose
-  if (enableDeprecatedApis) fastify.register(mercurius, {
-        schema: schema,
-        resolvers: resolvers,
-        graphiql: true,
-        jit: 1,
-        //federationMetadata: true,
-        path: '/gql'
-        //queryDepth: 11
-  })
 
   if (enableDatabase) fastify.register(import('./config/knexconn.js'), {
     knexName: 'sqldb',
@@ -199,14 +185,7 @@ export default async function (fastify, opts) {
   })
 
   fastify.register(AutoLoad, {
-    dir: join(import.meta.url, 'plugins'),
-    ignorePattern: enableDeprecatedApis ? undefined : /(?:cache|redis)\.js$/,
-    options: Object.assign({}, opts)
-  })
-
-  fastify.register(AutoLoad, {
     dir: join(import.meta.url, 'routes'),
-    ignorePattern: enableDeprecatedApis ? undefined : /odbio\.mjs$/,
     dirNameRoutePrefix: false,
     options: Object.assign({}, opts)
   })
