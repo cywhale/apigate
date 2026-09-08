@@ -35,6 +35,7 @@ str(speed, 8, 3) as "Speed(m/s)"
 //ref: https://stackoverflow.com/questions/52987837/nodejs-unable-to-import-sequelize-js-model-es6
   const limited_yrs = 3 //for CTD, SADCP, cannot reveal last 3 yrs data
   const limited_row = 100 // for raw file limitation
+  const cruiseQueryEnabled = false // retired public query mode; keep false to preserve the default SQL/cache path
   const grd15moa = deg => { return(parseInt((deg-0.125) / 0.25) * 0.25 + 0.25) } //gridded to 0.25-degree = 15 minute of arc
 
   const grdMissingVal = (res, xmin, grdx, grdy, curx, cury, gcnt, gi, gj, ix, iy, nx, tp) => {
@@ -375,8 +376,8 @@ str(speed, 8, 3) as "Speed(m/s)"
       }
 
       let cruise = ''
-      if (keyx === 'ctd') { //202305 add query cruise mode for CTD
-        if (typeof qstr.cruise !== 'undefined' && qstr.cruise.trim()) {
+      if (keyx === 'ctd') { // keep the established CTD cache-key namespace
+        if (cruiseQueryEnabled && typeof qstr.cruise !== 'undefined' && qstr.cruise.trim()) {
           cruise = qstr.cruise.trim()
           //fastify.log.info("In cruise query mode: " + cruise)
           allspan_avg_flag = 0 //in ctdavg, ctdgridqry procedure, no cruise column in those tables.
@@ -516,7 +517,7 @@ str(speed, 8, 3) as "Speed(m/s)"
                    `@mode=${mode}, @xorder=${xorder}, @yorder=${yorder}, @start=${start}, @end=${end}, @limit=${limit}, @mean_threshold=${mean_threshold}, @append=${append}`
       }
       //202305 add query cruise mode for CTD
-      if (cruise) {
+      if (cruiseQueryEnabled && cruise) {
         cruise = `"${cruise}"`
         qry = qry + `, @cruise=${cruise};`
       } else {
@@ -931,6 +932,7 @@ Order by [GMT+8],longitude_degree,latitude_degree
       tags: ['CTD'],
       querystring: {
         type: "object",
+        additionalProperties: false,
         properties: {
           lon0: { type: 'number', description: 'Start longitude' },
           lon1: { type: 'number', description: 'Optional, end longitude' },
@@ -944,7 +946,6 @@ Order by [GMT+8],longitude_degree,latitude_degree
                       description: 'Optional, mean: depth-averaged; exact: one depth specified by dep0; any integer >= 5: cut-level depth'},
           mode: { type: 'string',
                   description: 'Optional (default is long-term average), month: month climatology; monsoon: monsoon climatology; 0-18: Time_period data; see also: https://www.odb.ntu.edu.tw/ctd/ctd15moa/'},
-          cruise: { type: 'string', description: 'Deprecated, only internally used.'},
           format: { type: 'string', description: 'Optional (default: json), or geojson'},
           xorder: { type: 'integer',
                     description: 'Optional, any integer which positive: increasing or negative: descending order of output in longitude(x). Larger/smaller integer indicates priority in the ordering of x or y'},
