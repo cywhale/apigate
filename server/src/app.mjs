@@ -33,12 +33,14 @@ export const defaultFastifyOptions = {
 export default function buildApp (options = {}) {
   const {
     fastifyOptions = {},
+    configure,
     envData,
     envFile = join(import.meta.url, 'config/.env'),
     appOptions = {}
   } = options
 
   const fastify = Fastify({ ...defaultFastifyOptions, ...fastifyOptions })
+  if (configure) configure(fastify)
   const envOptions = { schema: envSchema }
 
   if (envData) envOptions.data = envData
