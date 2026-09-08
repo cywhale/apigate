@@ -71,6 +71,8 @@ test('sudo wrapper includes candidate preflight, validation, smoke tests, and ro
   assert.match(script, /systemctl reload nginx/)
   assert.match(script, /--resolve ecodata\.odb\.ntu\.edu\.tw:443:127\.0\.0\.1/)
   assert.match(script, /_migration_check=\$\{timestamp\}/)
+  assert.match(script, /for attempt in \{1\.\.15\}/)
+  assert.match(script, /openapi_ready=true/)
   assert.match(script, /restore\(\)/)
   assert.match(script, /routes-vm134\.conf/)
   assert.match(script, /upstreams-vm134\.conf/)

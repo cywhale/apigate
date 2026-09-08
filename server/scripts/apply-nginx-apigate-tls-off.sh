@@ -61,10 +61,19 @@ if ! systemctl is-active --quiet nginx; then
   exit 1
 fi
 
-if ! curl --silent --show-error --fail --max-time 20 \
-  --resolve ecodata.odb.ntu.edu.tw:443:127.0.0.1 \
-  "https://ecodata.odb.ntu.edu.tw/api/json?_migration_check=${timestamp}" \
-  | grep -q '"openapi":"3.1.0"'; then
+openapi_ready=false
+for attempt in {1..15}; do
+  if curl --silent --fail --max-time 5 \
+    --resolve ecodata.odb.ntu.edu.tw:443:127.0.0.1 \
+    "https://ecodata.odb.ntu.edu.tw/api/json?_migration_check=${timestamp}-${attempt}" \
+    | grep -q '"openapi":"3.1.0"'; then
+    openapi_ready=true
+    break
+  fi
+  sleep 1
+done
+
+if [ "${openapi_ready}" != true ]; then
   echo "HTTPS OpenAPI smoke test failed after reload." >&2
   restore
   exit 1
