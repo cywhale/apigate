@@ -40,7 +40,29 @@ test('public API allows cross-origin requests without credentials', async (t) =>
   assert.equal(response.headers['access-control-allow-credentials'], undefined)
 })
 
+test('answers public CORS preflight without enabling credentials', async (t) => {
+  const app = createTestApp()
+  t.after(() => app.close())
+  await app.ready()
+
+  const origin = 'https://consumer.example'
+  const response = await app.inject({
+    method: 'OPTIONS',
+    url: '/api/ctd',
+    headers: {
+      origin,
+      'access-control-request-method': 'GET',
+      'access-control-request-headers': 'content-type'
+    }
+  })
+
+  assert.equal(response.statusCode, 200)
+  assert.equal(response.headers['access-control-allow-origin'], origin)
+  assert.match(response.headers['access-control-allow-methods'], /GET/)
+  assert.equal(response.headers['access-control-allow-credentials'], undefined)
+})
 test('production script runs once without file watching', async () => {
+
   const packageJson = JSON.parse(await readFile(
     new URL('../package.json', import.meta.url),
     'utf8'

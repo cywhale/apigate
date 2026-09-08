@@ -9,11 +9,11 @@ dependencies:
     specifier: ^6.5.0
     version: 6.5.0
   '@fastify/cors':
-    specifier: ^10.1.0
-    version: 10.1.0
+    specifier: ^11.3.0
+    version: 11.3.0
   '@fastify/env':
-    specifier: ^5.0.3
-    version: 5.0.3
+    specifier: ^7.0.0
+    version: 7.0.0
   '@fastify/swagger':
     specifier: ^9.8.1
     version: 9.8.1
@@ -27,11 +27,11 @@ dependencies:
     specifier: ^5.12.3
     version: 5.12.3
   fastify-plugin:
-    specifier: ^5.1.0
-    version: 5.1.0
+    specifier: ^6.0.0
+    version: 6.0.0
   fluent-json-schema:
-    specifier: 5.0.0
-    version: 5.0.0
+    specifier: 6.0.1
+    version: 6.0.1
   knex:
     specifier: ^3.3.0
     version: 3.3.0(tedious@20.3.0)
@@ -254,21 +254,21 @@ packages:
     resolution: {integrity: sha512-JkjNcIia6PW1EhHLhAbI4vR6sO++8dW7hBwkcZ/p3ewBTQzrjyPXvQ0ChaUpkd+3/wNqg7W6GLsc0Az+KpW0Qw==}
     dev: false
 
-  /@fastify/cors@10.1.0:
-    resolution: {integrity: sha512-MZyBCBJtII60CU9Xme/iE4aEy8G7QpzGR8zkdXZkDFt7ElEMachbE61tfhAG/bvSaULlqlf0huMT12T7iqEmdQ==}
+  /@fastify/cors@11.3.0:
+    resolution: {integrity: sha512-ggQGua+xHv1MvePbPr0v//xLYEsCXbWspquXCJS9Ot5YoRXq8J8ZWzHnxDBVnbtXosvistXo6LtNzOJswf64Fw==}
     dependencies:
-      fastify-plugin: 5.1.0
-      mnemonist: 0.40.0
+      fastify-plugin: 6.0.0
+      toad-cache: 3.7.4
     dev: false
 
-  /@fastify/deepmerge@2.0.2:
-    resolution: {integrity: sha512-3wuLdX5iiiYeZWP6bQrjqhrcvBIf0NHbQH1Ur1WbHvoiuTYUEItgygea3zs8aHpiitn0lOB8gX20u1qO+FDm7Q==}
+  /@fastify/deepmerge@3.2.1:
+    resolution: {integrity: sha512-N5Oqvltoa2r9z1tbx4xjky0oRR60v+T47Ic4J1ukoVQcptLOrIdRnCSdTGmOmajZuHVKlTnfcmrjyqsGEW1ztA==}
     dev: false
 
-  /@fastify/env@5.0.3:
-    resolution: {integrity: sha512-VqXKcw+keaZaCry9dDtphDQy6l+B1UOodk4q57NdIK/tjZsPMYEBTXjEDiZCAiD9KaGJXbJOMgYdgejU1iD0jA==}
+  /@fastify/env@7.0.0:
+    resolution: {integrity: sha512-uXoxDzQ9FR/J6XXmcFndAksHM+hAxGXf/v6L4x9iLmK/04Tp/ZceV1oBxsJJo4bNaSu7WHhJqIQReIfz0Ul+tg==}
     dependencies:
-      env-schema: 6.1.0
+      env-schema: 7.0.0
       fastify-plugin: 5.1.0
     dev: false
 
@@ -545,28 +545,16 @@ packages:
     resolution: {integrity: sha512-vgTAOosB1aHrmzjGnzFCbjvXbk8QAOC/36JxJhcBkeAuUy8QwRFxAWBHemiDpUB3cbrBruFUdzpUS21aocvaWg==}
     dev: false
 
-  /dotenv-expand@10.0.0:
-    resolution: {integrity: sha512-GopVGCpVS1UKH75VKHGuQFqS1Gusej0z4FyQkPdwjil2gNIv+LNsqBlboOzpJFZKVT95GkCyWJbBSdFEFUWI2A==}
-    engines: {node: '>=12'}
-    dev: false
-
-  /dotenv@17.4.2:
-    resolution: {integrity: sha512-nI4U3TottKAcAD9LLud4Cb7b2QztQMUEfHbvhTH09bqXTxnSie8WnjPALV/WMCrJZ6UV/qHJ6L03OqO3LcdYZw==}
-    engines: {node: '>=12'}
-    dev: false
-
   /ecdsa-sig-formatter@1.0.11:
     resolution: {integrity: sha512-nagl3RYrbNv6kQkeJIpt6NJZy8twLB/2vtz6yN9Z4vRKHN4/QZJIEbqohALSgwKdnksuY3k5Addp5lg8sVoVcQ==}
     dependencies:
       safe-buffer: 5.2.1
     dev: false
 
-  /env-schema@6.1.0:
-    resolution: {integrity: sha512-TWtYV2jKe7bd/19kzvNGa8GRRrSwmIMarhcWBzuZYPbHtdlUdjYhnaFvxrO4+GvcwF10sEeVGzf9b/wqLIyf9A==}
+  /env-schema@7.0.0:
+    resolution: {integrity: sha512-b8rdAwdFpekDxNAUNuT6KbV/QEX/pTBs0gjehEPmBUUteh9zBDm9zxFSQt55D29odo3rJt4feoWRqn4U/tzicw==}
     dependencies:
       ajv: 8.20.0
-      dotenv: 17.4.2
-      dotenv-expand: 10.0.0
     dev: false
 
   /escalade@3.2.0:
@@ -669,10 +657,10 @@ packages:
       safe-regex2: 5.1.1
     dev: false
 
-  /fluent-json-schema@5.0.0:
-    resolution: {integrity: sha512-BGzLGdOMJ4Q2eCBnkNHGC0wcbgBc3AW3ivjk6ugdiMPraTmv0/yKn5fNYGHqwfWzhuOl6ljnhapebt0gkh8pNg==}
+  /fluent-json-schema@6.0.1:
+    resolution: {integrity: sha512-AgWbkPFFTYme2kOKtDXgXIyqbnnqe/DNtbigVuEhwZpR6Ts43vEpPNWSlSkHmvYMCwPGIGS6TrP/7W66vzgtGw==}
     dependencies:
-      '@fastify/deepmerge': 2.0.2
+      '@fastify/deepmerge': 3.2.1
     dev: false
 
   /function-bind@1.1.2:
@@ -960,12 +948,6 @@ packages:
     engines: {node: '>=16 || 14 >=14.17'}
     dev: false
 
-  /mnemonist@0.40.0:
-    resolution: {integrity: sha512-kdd8AFNig2AD5Rkih7EPCXhu/iMvwevQFX/uEiGhZyPZi7fHqOoF4V4kHLpCfysxXMgQ4B52kdPMCwARshKvEg==}
-    dependencies:
-      obliterator: 2.0.5
-    dev: false
-
   /ms@2.1.2:
     resolution: {integrity: sha512-sGkPx+VjMtmA6MX27oA4FBFELFCZZ4S4XqeGOXCv68tT+jb3vk/RyaKWP0PTKyWtmLSM0b+adUTEvbs1PEaH2w==}
     dev: false
@@ -976,10 +958,6 @@ packages:
 
   /native-duplexpair@1.0.0:
     resolution: {integrity: sha512-E7QQoM+3jvNtlmyfqRZ0/U75VFgCls+fSkbml2MpgWkWyz3ox8Y58gNhfuziuQYGNNQAbFZJQck55LHCnCK6CA==}
-    dev: false
-
-  /obliterator@2.0.5:
-    resolution: {integrity: sha512-42CPE9AhahZRsMNslczq0ctAEtqk8Eka26QofnqC346BZdHDySk3LWka23LI7ULIw11NmltpiLagIq8gBozxTw==}
     dev: false
 
   /on-exit-leak-free@2.1.2:
