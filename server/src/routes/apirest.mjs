@@ -8,6 +8,7 @@ import { finished } from 'stream/promises'
 //import parser from 'stream-json'
 //import streamArray from 'stream-json/streamers/StreamArray'
 //import zlib from 'zlib';
+export const jsonPeriodMode = mode => mode === 'NULL' ? '0' : mode
 
 //export const autoPrefix = process.env.NODE_ENV === 'production'? '/api' : '/apitest'
 export const autoPrefix = '/api'
@@ -284,7 +285,7 @@ str(speed, 8, 3) as "Speed(m/s)"
           'parameterNumberName', 'parameterUnit', 'refTime', 'forcastTime', 'lo1', 'la1',
           'lo2', 'la2', 'nx', 'ny', 'dx', 'dy'],
         properties: {
-          periodMode: { type: ['string', 'integer', 'null'] },
+          periodMode: { type: ['string', 'integer'] },
           periodArray: { type: 'array', items: { type: 'integer' } },
           parameterCategory: { type: 'integer' },
           parameterNumber: { type: 'integer' },
@@ -711,7 +712,7 @@ str(speed, 8, 3) as "Speed(m/s)"
               cacheout.push(predx)
               data = JSON.stringify(toGeoJsonRow(chunk))
             } else if (keyx === 'sadcp' && format === 'uvgrid') { //JSON format for GFS: https://github.com/cambecc/grib2json/blob/master/README.md
-              predx = `{"header":{"periodMode":${mode},"periodArray":${JSON.stringify(period)},"parameterCategory":11,"parameterNumber":1,"parameterNumberName":"UV-grids","parameterUnit":"m.s-1","refTime":null,"forcastTime":0,"lo1":${bbox[0]},"la1":${bbox[3]},"lo2":${bbox[2]},"la2":${bbox[1]},"nx":${nx},"ny":${ny},"dx":${dx},"dy":${dy}},"data":[`
+              predx = `{"header":{"periodMode":${jsonPeriodMode(mode)},"periodArray":${JSON.stringify(period)},"parameterCategory":11,"parameterNumber":1,"parameterNumberName":"UV-grids","parameterUnit":"m.s-1","refTime":null,"forcastTime":0,"lo1":${bbox[0]},"la1":${bbox[3]},"lo2":${bbox[2]},"la2":${bbox[1]},"nx":${nx},"ny":${ny},"dx":${dx},"dy":${dy}},"data":[`
               res.raw.write(predx)
               cacheout.push(predx)
               //if (chkmissFlag) { //count == 0 always check
