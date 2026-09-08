@@ -36,6 +36,7 @@ str(speed, 8, 3) as "Speed(m/s)"
   const limited_yrs = 3 //for CTD, SADCP, cannot reveal last 3 yrs data
   const limited_row = 100 // for raw file limitation
   const cruiseQueryEnabled = false // retired public query mode; keep false to preserve the default SQL/cache path
+  const rawQueryEnabled = false // retain the implementation, but prevent public requests from reaching raw-data procedures
   const grd15moa = deg => { return(parseInt((deg-0.125) / 0.25) * 0.25 + 0.25) } //gridded to 0.25-degree = 15 minute of arc
 
   const grdMissingVal = (res, xmin, grdx, grdy, curx, cury, gcnt, gi, gj, ix, iy, nx, tp) => {
@@ -323,7 +324,7 @@ str(speed, 8, 3) as "Speed(m/s)"
   const modeSchema = {
     type: 'string',
     anyOf: [
-      { enum: ['month', 'season', 'monsoon', 'raw', 'raw0', 'raw1', 'rawx'] },
+      { enum: ['month', 'season', 'monsoon'] },
       { pattern: '^(?:[0-9]|1[0-8])$' }
     ]
   }
@@ -345,7 +346,7 @@ str(speed, 8, 3) as "Speed(m/s)"
 */
   const queryPipe = async (req, reply, keyx='sadcp') => {
       const qstr = req.query
-      const test_raw = (typeof qstr.mode !== 'undefined') && (/^raw/.test(qstr.mode))
+      const test_raw = rawQueryEnabled && (typeof qstr.mode !== 'undefined') && (/^raw/.test(qstr.mode))
       let start='1991-01-01'
       let end = 'NULL' //'' before modifed query to stored procedure in mssql 20220505
       let startd = Date.parse(start)
@@ -473,7 +474,7 @@ str(speed, 8, 3) as "Speed(m/s)"
           period = [13,14,15,16]
         } else if (mode === 'month') {
           period = [1,2,3,4,5,6,7,8,9,10,11,12]
-        } else if (/^raw/.test(mode)) {
+        } else if (rawQueryEnabled && /^raw/.test(mode)) {
           if (auth === 'guest' || !cruise || mode !== 'rawx') { limit = limited_row } //202305 add query cruise mode for CTD
         } else {
           if (Number.isInteger(Number(qstr.mode))) {

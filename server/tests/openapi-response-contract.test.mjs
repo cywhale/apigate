@@ -56,7 +56,7 @@ test('accepts established string values and rejects undocumented values before t
   const app = createTestApp()
   t.after(() => app.close())
   await app.ready()
-  for (const query of ['dep_mode=5', 'dep_mode=mean', 'mode=0', 'mode=18', 'mode=monsoon', 'mode=rawx']) {
+  for (const query of ['dep_mode=5', 'dep_mode=mean', 'mode=0', 'mode=18', 'mode=monsoon']) {
     const response = await app.inject(`/api/ctd?lon0=120&lat0=20&${query}`)
     assert.notEqual(response.statusCode, 400, query)
   }

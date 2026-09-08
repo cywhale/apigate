@@ -46,7 +46,7 @@ test('discards external cruise input before the request handler', async (t) => {
   t.after(() => app.close())
   await app.ready()
 
-  const baseUrl = '/api/ctd?lon0=120&lat0=20&mode=rawx'
+  const baseUrl = '/api/ctd?lon0=120&lat0=20&mode=monsoon'
   const withoutCruise = await app.inject({ method: 'GET', url: baseUrl })
   const withCruise = await app.inject({
     method: 'GET',
@@ -56,7 +56,7 @@ test('discards external cruise input before the request handler', async (t) => {
   assert.equal(withoutCruise.statusCode, 204)
   assert.equal(withCruise.statusCode, 204)
   assert.deepEqual(validatedQueries, [
-    { lon0: 120, lat0: 20, mode: 'rawx', append: 'temperature' },
-    { lon0: 120, lat0: 20, mode: 'rawx', append: 'temperature' }
+    { lon0: 120, lat0: 20, mode: 'monsoon', append: 'temperature' },
+    { lon0: 120, lat0: 20, mode: 'monsoon', append: 'temperature' }
   ])
 })
