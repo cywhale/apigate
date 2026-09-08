@@ -258,6 +258,75 @@ str(speed, 8, 3) as "Speed(m/s)"
         .prop('oxygen', S.number())
         .prop('count', S.integer())
        )
+  const jsonArraySchema = (title, rowSchema) => ({
+    title,
+    type: 'array',
+    items: rowSchema.valueOf()
+  })
+  const featureCollectionSchema = (title, featureSchema) => ({
+    title,
+    type: 'object',
+    required: ['type', 'features'],
+    properties: {
+      type: { const: 'FeatureCollection' },
+      features: { type: 'array', items: featureSchema.valueOf() }
+    }
+  })
+  const sadcpUvGridSchema = {
+    title: 'SadcpUvGrid',
+    type: 'object',
+    required: ['header', 'data'],
+    properties: {
+      header: {
+        type: 'object',
+        required: ['periodMode', 'periodArray', 'parameterCategory', 'parameterNumber',
+          'parameterNumberName', 'parameterUnit', 'refTime', 'forcastTime', 'lo1', 'la1',
+          'lo2', 'la2', 'nx', 'ny', 'dx', 'dy'],
+        properties: {
+          periodMode: { type: ['string', 'integer', 'null'] },
+          periodArray: { type: 'array', items: { type: 'integer' } },
+          parameterCategory: { type: 'integer' },
+          parameterNumber: { type: 'integer' },
+          parameterNumberName: { type: 'string' },
+          parameterUnit: { type: 'string' },
+          refTime: { type: ['string', 'null'] },
+          forcastTime: { type: 'integer' },
+          lo1: { type: 'number' }, la1: { type: 'number' },
+          lo2: { type: 'number' }, la2: { type: 'number' },
+          nx: { type: 'integer' }, ny: { type: 'integer' },
+          dx: { type: 'number' }, dy: { type: 'number' }
+        }
+      },
+      data: {
+        type: 'array',
+        items: {
+          type: 'object',
+          additionalProperties: {
+            type: 'object',
+            required: ['u', 'v'],
+            properties: {
+              u: { type: ['number', 'null'] },
+              v: { type: ['number', 'null'] }
+            }
+          }
+        }
+      }
+    }
+  }
+  const depModeSchema = {
+    type: 'string',
+    anyOf: [
+      { enum: ['mean', 'exact', 'range'] },
+      { pattern: '^([5-9]|[1-9][0-9]+)$' }
+    ]
+  }
+  const modeSchema = {
+    type: 'string',
+    anyOf: [
+      { enum: ['month', 'season', 'monsoon', 'raw', 'raw0', 'raw1', 'rawx'] },
+      { pattern: '^(?:[0-9]|1[0-8])$' }
+    ]
+  }
 /*
   const constraint = {
     response: {
@@ -789,11 +858,11 @@ str(speed, 8, 3) as "Speed(m/s)"
                   description: 'Minimum sampling depth (optional): if only dep0 specified: output depth >= dep0; both dep0, dep1 specified: dep0 <= output depth <= dep1' },
           dep1: { type: 'number',
                   description: 'Maximum sampling depth (optional): if only dep1 specified: output depth <= dep1; see also: dep0' },
-          dep_mode: { type: 'string',
+          dep_mode: { ...depModeSchema,
                       description: 'Optional, mean: depth-averaged; exact: one depth specified by dep0; any integer >= 5: cut-level depth'},
-          mode: { type: 'string',
+          mode: { ...modeSchema,
                   description: 'Optional (default is long-term average), month: month climatology; monsoon: monsoon climatology; 0-18: Time_period data; see also: https://www.odb.ntu.edu.tw/adcp/adcp15moa/'},
-          format: { type: 'string', description: 'Optional: json (default), geojson, or uvgrid which returns a gridded UV JSON (header + data[]; the data array flattens the lon–lat grid, each cell stores per-time_period values like {u, v})'},
+          format: { type: 'string', enum: ['json', 'geojson', 'uvgrid'], description: 'Optional: json (default), geojson, or uvgrid which returns a gridded UV JSON (header + data[]; the data array flattens the lon–lat grid, each cell stores per-time_period values like {u, v})'},
           xorder: { type: 'integer',
                     description: 'Optional, any integer which positive: increasing or negative: descending order of output in longitude(x). Larger/smaller integer indicates priority in the ordering of x or y'},
           yorder: { type: 'integer',
@@ -821,7 +890,14 @@ str(speed, 8, 3) as "Speed(m/s)"
           //properties: { //https://bit.ly/3vVD0Zg : fast-json-stringify doesn't support oneOf as the root object
           //  response: sadcpSchema
           //}
-          S.oneOf([sadcpJsonSchema, sadcpGJsonSchema])
+          {
+            description: 'Shape corresponds to the format query parameter.',
+            oneOf: [
+              jsonArraySchema('SadcpJsonArray', sadcpJsonSchema),
+              featureCollectionSchema('SadcpGeoJson', sadcpGJsonSchema),
+              sadcpUvGridSchema
+            ]
+          }
         //) //}
       }
     },
@@ -942,11 +1018,11 @@ Order by [GMT+8],longitude_degree,latitude_degree
                   description: 'Minimum sampling depth (optional): if only dep0 specified: output depth >= dep0; both dep0, dep1 specified: dep0 <= output depth <= dep1' },
           dep1: { type: 'number',
                   description: 'Maximum sampling depth (optional): if only dep1 specified: output depth <= dep1; see also: dep0' },
-          dep_mode: { type: 'string',
+          dep_mode: { ...depModeSchema,
                       description: 'Optional, mean: depth-averaged; exact: one depth specified by dep0; any integer >= 5: cut-level depth'},
-          mode: { type: 'string',
+          mode: { ...modeSchema,
                   description: 'Optional (default is long-term average), month: month climatology; monsoon: monsoon climatology; 0-18: Time_period data; see also: https://www.odb.ntu.edu.tw/ctd/ctd15moa/'},
-          format: { type: 'string', description: 'Optional (default: json), or geojson'},
+          format: { type: 'string', enum: ['json', 'geojson'], description: 'Optional (default: json), or geojson'},
           xorder: { type: 'integer',
                     description: 'Optional, any integer which positive: increasing or negative: descending order of output in longitude(x). Larger/smaller integer indicates priority in the ordering of x or y'},
           yorder: { type: 'integer',
@@ -962,7 +1038,13 @@ Order by [GMT+8],longitude_degree,latitude_degree
       },
       response: {
         200:
-          S.oneOf([ctdJsonSchema, ctdGJsonSchema])
+          {
+            description: 'Shape corresponds to the format query parameter.',
+            oneOf: [
+              jsonArraySchema('CtdJsonArray', ctdJsonSchema),
+              featureCollectionSchema('CtdGeoJson', ctdGJsonSchema)
+            ]
+          }
       }
     },
     handler: async (req, reply) => {
