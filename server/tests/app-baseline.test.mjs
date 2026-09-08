@@ -42,14 +42,14 @@ test('keeps production paths and required coordinates', async (t) => {
   }
 })
 
-test('captures the pre-migration Swagger 2 contract', async (t) => {
+test('captures the OpenAPI 3.1 contract', async (t) => {
   const app = createTestApp()
   t.after(() => app.close())
   await app.ready()
 
   const specification = app.swagger()
-  assert.equal(specification.swagger, '2.0')
-  assert.equal(specification.host, 'ecodata.odb.ntu.edu.tw')
+  assert.equal(specification.openapi, '3.1.0')
+  assert.deepEqual(specification.servers, [{ url: 'https://ecodata.odb.ntu.edu.tw' }])
   assert.ok(specification.paths['/api/ctd'])
   assert.ok(specification.paths['/api/sadcp'])
   assert.deepEqual(Object.keys(specification.paths).sort(), ['/api/ctd', '/api/sadcp'])
