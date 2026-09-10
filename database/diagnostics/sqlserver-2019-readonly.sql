@@ -49,12 +49,12 @@ DECLARE @views TABLE (
   object_id int NULL
 );
 INSERT INTO @views (view_name, object_id) VALUES
-  (N'VIEW_CTD_GRID15MOA_2015', OBJECT_ID(N'dbo.VIEW_CTD_GRID15MOA_2015', N'V')),
-  (N'VIEW_CTD_GRID15MOA_yyyymm', OBJECT_ID(N'dbo.VIEW_CTD_GRID15MOA_yyyymm', N'V')),
-  (N'VIEW_CTD_MEASURED_2015', OBJECT_ID(N'dbo.VIEW_CTD_MEASURED_2015', N'V')),
-  (N'VIEW_SADCP_GRID15MOA_2015', OBJECT_ID(N'dbo.VIEW_SADCP_GRID15MOA_2015', N'V')),
-  (N'VIEW_SADCP_GRID15MOA_yyyymm', OBJECT_ID(N'dbo.VIEW_SADCP_GRID15MOA_yyyymm', N'V')),
-  (N'VIEW_SADCP_MEASURED_2015', OBJECT_ID(N'dbo.VIEW_SADCP_MEASURED_2015', N'V'));
+  (N'VIEW_CTD_GRID15MOA_2015', OBJECT_ID(N'dbo.VIEW_CTD_GRID15MOA_2015')),
+  (N'VIEW_CTD_GRID15MOA_yyyymm', OBJECT_ID(N'dbo.VIEW_CTD_GRID15MOA_yyyymm')),
+  (N'VIEW_CTD_MEASURED_2015', OBJECT_ID(N'dbo.VIEW_CTD_MEASURED_2015')),
+  (N'VIEW_SADCP_GRID15MOA_2015', OBJECT_ID(N'dbo.VIEW_SADCP_GRID15MOA_2015')),
+  (N'VIEW_SADCP_GRID15MOA_yyyymm', OBJECT_ID(N'dbo.VIEW_SADCP_GRID15MOA_yyyymm')),
+  (N'VIEW_SADCP_MEASURED_2015', OBJECT_ID(N'dbo.VIEW_SADCP_MEASURED_2015'));
 
 -- A NULL object_id means the script is running in the wrong database or the
 -- caller cannot see that object. All six rows should be FOUND in odbphy.
@@ -68,13 +68,13 @@ FROM @views
 ORDER BY view_name;
 
 SELECT
-  SCHEMA_NAME(v.schema_id) AS view_schema,
-  v.name AS view_name,
+  SCHEMA_NAME(v.schema_id) AS object_schema,
+  v.name AS object_name,
   m.definition
 FROM @views AS wanted
-JOIN sys.views AS v ON v.object_id = wanted.object_id
-JOIN sys.sql_modules AS m ON m.object_id = v.object_id
-ORDER BY view_schema, view_name;
+JOIN sys.objects AS v ON v.object_id = wanted.object_id
+LEFT JOIN sys.sql_modules AS m ON m.object_id = v.object_id
+ORDER BY object_schema, object_name;
 
 -- Procedure references are assembled as dynamic SQL, so SQL Server cannot
 -- expose them through sys.sql_expression_dependencies. Start from the six
