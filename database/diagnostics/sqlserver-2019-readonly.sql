@@ -176,12 +176,12 @@ row_counts AS (
 ),
 statistics_dates AS (
   SELECT
-    statistics.object_id,
-    MAX(STATS_DATE(statistics.object_id, statistics.stats_id)) AS newest_statistics_at,
-    MIN(STATS_DATE(statistics.object_id, statistics.stats_id)) AS oldest_statistics_at
-  FROM sys.stats AS statistics
-  JOIN unique_objects ON unique_objects.object_id = statistics.object_id
-  GROUP BY statistics.object_id
+    stats_meta.object_id,
+    MAX(STATS_DATE(stats_meta.object_id, stats_meta.stats_id)) AS newest_statistics_at,
+    MIN(STATS_DATE(stats_meta.object_id, stats_meta.stats_id)) AS oldest_statistics_at
+  FROM sys.stats AS stats_meta
+  JOIN unique_objects ON unique_objects.object_id = stats_meta.object_id
+  GROUP BY stats_meta.object_id
 )
 SELECT
   OBJECT_SCHEMA_NAME(catalog.object_id) AS object_schema,
