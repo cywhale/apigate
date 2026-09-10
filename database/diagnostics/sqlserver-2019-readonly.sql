@@ -44,75 +44,158 @@ JOIN @procedures AS wanted ON wanted.name = p.name
 JOIN sys.parameters AS prm ON prm.object_id = p.object_id
 ORDER BY schema_name, procedure_name, prm.parameter_id;
 
-SELECT
-  OBJECT_SCHEMA_NAME(d.referencing_id) AS procedure_schema,
-  OBJECT_NAME(d.referencing_id) AS procedure_name,
-  d.referenced_schema_name,
-  d.referenced_entity_name,
-  d.is_ambiguous
-FROM sys.sql_expression_dependencies AS d
-JOIN sys.procedures AS p ON p.object_id = d.referencing_id
-JOIN @procedures AS wanted ON wanted.name = p.name
-ORDER BY procedure_schema, procedure_name, referenced_schema_name, referenced_entity_name;
+DECLARE @views TABLE (
+  view_name sysname PRIMARY KEY,
+  object_id int NULL
+);
+INSERT INTO @views (view_name, object_id) VALUES
+  (N'VIEW_CTD_GRID15MOA_2015', OBJECT_ID(N'dbo.VIEW_CTD_GRID15MOA_2015', N'V')),
+  (N'VIEW_CTD_GRID15MOA_yyyymm', OBJECT_ID(N'dbo.VIEW_CTD_GRID15MOA_yyyymm', N'V')),
+  (N'VIEW_CTD_MEASURED_2015', OBJECT_ID(N'dbo.VIEW_CTD_MEASURED_2015', N'V')),
+  (N'VIEW_SADCP_GRID15MOA_2015', OBJECT_ID(N'dbo.VIEW_SADCP_GRID15MOA_2015', N'V')),
+  (N'VIEW_SADCP_GRID15MOA_yyyymm', OBJECT_ID(N'dbo.VIEW_SADCP_GRID15MOA_yyyymm', N'V')),
+  (N'VIEW_SADCP_MEASURED_2015', OBJECT_ID(N'dbo.VIEW_SADCP_MEASURED_2015', N'V'));
 
-;WITH referenced_objects AS (
-  SELECT DISTINCT OBJECT_ID(QUOTENAME(d.referenced_schema_name) + N'.' + QUOTENAME(d.referenced_entity_name)) AS object_id
-  FROM sys.sql_expression_dependencies AS d
-  JOIN sys.procedures AS p ON p.object_id = d.referencing_id
-  JOIN @procedures AS wanted ON wanted.name = p.name
-  WHERE d.referenced_database_name IS NULL
-)
+-- A NULL object_id means the script is running in the wrong database or the
+-- caller cannot see that object. All six rows should be FOUND in odbphy.
 SELECT
-  OBJECT_SCHEMA_NAME(o.object_id) AS object_schema,
-  o.name AS object_name,
-  o.type_desc,
-  i.index_id,
-  i.name AS index_name,
-  i.type_desc AS index_type,
-  i.is_unique,
-  i.is_disabled,
-  i.has_filter,
-  i.filter_definition,
-  ic.key_ordinal,
-  ic.is_included_column,
-  c.name AS column_name
-FROM referenced_objects AS r
-JOIN sys.objects AS o ON o.object_id = r.object_id
-LEFT JOIN sys.indexes AS i ON i.object_id = o.object_id
-LEFT JOIN sys.index_columns AS ic ON ic.object_id = i.object_id AND ic.index_id = i.index_id
-LEFT JOIN sys.columns AS c ON c.object_id = ic.object_id AND c.column_id = ic.column_id
-WHERE r.object_id IS NOT NULL
-ORDER BY object_schema, object_name, i.index_id, ic.key_ordinal, ic.index_column_id;
-
-;WITH referenced_objects AS (
-  SELECT DISTINCT OBJECT_ID(QUOTENAME(d.referenced_schema_name) + N'.' + QUOTENAME(d.referenced_entity_name)) AS object_id
-  FROM sys.sql_expression_dependencies AS d
-  JOIN sys.procedures AS p ON p.object_id = d.referencing_id
-  JOIN @procedures AS wanted ON wanted.name = p.name
-  WHERE d.referenced_database_name IS NULL
-)
-SELECT
-  OBJECT_SCHEMA_NAME(o.object_id) AS object_schema,
-  o.name AS object_name,
-  SUM(CASE WHEN ps.index_id IN (0, 1) THEN ps.row_count ELSE 0 END) AS approximate_row_count,
-  MAX(STATS_DATE(s.object_id, s.stats_id)) AS newest_statistics_at,
-  MIN(STATS_DATE(s.object_id, s.stats_id)) AS oldest_statistics_at
-FROM referenced_objects AS r
-JOIN sys.objects AS o ON o.object_id = r.object_id
-LEFT JOIN sys.dm_db_partition_stats AS ps ON ps.object_id = o.object_id
-LEFT JOIN sys.stats AS s ON s.object_id = o.object_id
-WHERE r.object_id IS NOT NULL
-GROUP BY o.object_id, o.name
-ORDER BY object_schema, object_name;
+  DB_NAME() AS database_name,
+  N'dbo' AS expected_schema,
+  view_name,
+  CASE WHEN object_id IS NULL THEN N'MISSING OR NOT VISIBLE' ELSE N'FOUND' END AS status,
+  object_id
+FROM @views
+ORDER BY view_name;
 
 SELECT
   SCHEMA_NAME(v.schema_id) AS view_schema,
   v.name AS view_name,
   m.definition
-FROM sys.views AS v
+FROM @views AS wanted
+JOIN sys.views AS v ON v.object_id = wanted.object_id
 JOIN sys.sql_modules AS m ON m.object_id = v.object_id
-WHERE v.name IN (
-  N'view_ctd_measured_2015', N'view_ctd_grid15moa_2015', N'view_ctd_grid15moa_yyyymm',
-  N'view_sadcp_measured_2015', N'view_sadcp_grid15moa_2015', N'view_sadcp_grid15moa_yyyymm'
-)
 ORDER BY view_schema, view_name;
+
+-- Procedure references are assembled as dynamic SQL, so SQL Server cannot
+-- expose them through sys.sql_expression_dependencies. Start from the six
+-- known views and recursively collect their statically declared dependencies.
+DECLARE @objects TABLE (
+  source_view sysname NOT NULL,
+  object_id int NOT NULL,
+  depth int NOT NULL,
+  PRIMARY KEY (source_view, object_id)
+);
+
+INSERT INTO @objects (source_view, object_id, depth)
+SELECT view_name, object_id, 0
+FROM @views
+WHERE object_id IS NOT NULL;
+
+DECLARE @inserted int = 1;
+WHILE @inserted > 0
+BEGIN
+  INSERT INTO @objects (source_view, object_id, depth)
+  SELECT
+    parent.source_view,
+    dependency.referenced_id,
+    MIN(parent.depth) + 1
+  FROM @objects AS parent
+  JOIN sys.sql_expression_dependencies AS dependency
+    ON dependency.referencing_id = parent.object_id
+  WHERE dependency.referenced_id IS NOT NULL
+    AND dependency.referenced_database_name IS NULL
+    AND NOT EXISTS (
+      SELECT 1
+      FROM @objects AS existing
+      WHERE existing.source_view = parent.source_view
+        AND existing.object_id = dependency.referenced_id
+    )
+  GROUP BY parent.source_view, dependency.referenced_id;
+
+  SET @inserted = @@ROWCOUNT;
+END;
+
+SELECT
+  objects.source_view,
+  objects.depth,
+  OBJECT_SCHEMA_NAME(objects.object_id) AS object_schema,
+  OBJECT_NAME(objects.object_id) AS object_name,
+  catalog.type_desc,
+  synonym.base_object_name
+FROM @objects AS objects
+JOIN sys.objects AS catalog ON catalog.object_id = objects.object_id
+LEFT JOIN sys.synonyms AS synonym ON synonym.object_id = objects.object_id
+ORDER BY objects.source_view, objects.depth, object_schema, object_name;
+
+SELECT
+  objects.source_view,
+  objects.depth,
+  OBJECT_SCHEMA_NAME(catalog.object_id) AS object_schema,
+  catalog.name AS object_name,
+  catalog.type_desc AS object_type,
+  indexes.index_id,
+  indexes.name AS index_name,
+  indexes.type_desc AS index_type,
+  indexes.is_unique,
+  indexes.is_disabled,
+  indexes.has_filter,
+  indexes.filter_definition,
+  index_columns.key_ordinal,
+  index_columns.is_included_column,
+  columns.name AS column_name
+FROM @objects AS objects
+JOIN sys.objects AS catalog ON catalog.object_id = objects.object_id
+LEFT JOIN sys.indexes AS indexes ON indexes.object_id = catalog.object_id
+LEFT JOIN sys.index_columns AS index_columns
+  ON index_columns.object_id = indexes.object_id
+  AND index_columns.index_id = indexes.index_id
+LEFT JOIN sys.columns AS columns
+  ON columns.object_id = index_columns.object_id
+  AND columns.column_id = index_columns.column_id
+ORDER BY
+  objects.source_view,
+  objects.depth,
+  object_schema,
+  object_name,
+  indexes.index_id,
+  index_columns.key_ordinal,
+  index_columns.index_column_id;
+
+;WITH unique_objects AS (
+  SELECT DISTINCT object_id
+  FROM @objects
+),
+row_counts AS (
+  SELECT
+    partitions.object_id,
+    SUM(CASE WHEN partitions.index_id IN (0, 1)
+      THEN partitions.row_count ELSE 0 END) AS approximate_row_count
+  FROM sys.dm_db_partition_stats AS partitions
+  JOIN unique_objects ON unique_objects.object_id = partitions.object_id
+  GROUP BY partitions.object_id
+),
+statistics_dates AS (
+  SELECT
+    statistics.object_id,
+    MAX(STATS_DATE(statistics.object_id, statistics.stats_id)) AS newest_statistics_at,
+    MIN(STATS_DATE(statistics.object_id, statistics.stats_id)) AS oldest_statistics_at
+  FROM sys.stats AS statistics
+  JOIN unique_objects ON unique_objects.object_id = statistics.object_id
+  GROUP BY statistics.object_id
+)
+SELECT
+  OBJECT_SCHEMA_NAME(catalog.object_id) AS object_schema,
+  catalog.name AS object_name,
+  catalog.type_desc,
+  row_counts.approximate_row_count,
+  statistics_dates.newest_statistics_at,
+  statistics_dates.oldest_statistics_at
+FROM unique_objects
+JOIN sys.objects AS catalog ON catalog.object_id = unique_objects.object_id
+LEFT JOIN row_counts ON row_counts.object_id = catalog.object_id
+LEFT JOIN statistics_dates ON statistics_dates.object_id = catalog.object_id
+ORDER BY object_schema, object_name;
+
+SELECT
+  HAS_PERMS_BY_NAME(DB_NAME(), N'DATABASE', N'VIEW DEFINITION') AS can_view_definition,
+  HAS_PERMS_BY_NAME(DB_NAME(), N'DATABASE', N'VIEW DATABASE STATE') AS can_view_database_state;
