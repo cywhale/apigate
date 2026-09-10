@@ -561,7 +561,12 @@ str(speed, 8, 3) as "Speed(m/s)"
         mode = `"${mode}"`
       }
 
-      let mean_threshold = qstr.mean_threshold??-1
+      // AJV coerces a valid query-string integer to number. Keep a numeric
+      // fallback here as defense in depth: this value is interpolated into the
+      // stored-procedure EXEC statement below and must never remain a string.
+      const mean_threshold = Number.isInteger(qstr.mean_threshold)
+        ? qstr.mean_threshold
+        : -1
       let lon0 = qstr.lon0 //??105 //now it's required
       let lon1 = qstr.lon1??grd15moa(lon0)
       let lat0 = qstr.lat0 //??2   //now it's required
@@ -872,7 +877,12 @@ str(speed, 8, 3) as "Speed(m/s)"
           start: { type: 'string', description: 'Optional, start-date of data' },
           end: { type: 'string', description: 'Optional, end-date of data, limited to no later than the most recent three years' },
           limit: { type: 'integer', description: 'Optional, limit the number of output data'},
-          mean_threshold: { type: 'string', description: `Optional, the minimum criteria for number of data in a grid when using mean mode`},
+          mean_threshold: {
+            type: 'integer',
+            minimum: -2147483648,
+            maximum: 2147483647,
+            description: `Optional, the minimum criteria for number of data in a grid when using mean mode`
+          },
           append: { type: 'string', default: 'u,v',
                     description: `Output multi-variables by comma-separated string: "u,v,speed,direction,count"`}
         },
@@ -1032,7 +1042,12 @@ Order by [GMT+8],longitude_degree,latitude_degree
           start: { type: 'string', description: 'Optional, start-date of data' },
           end: { type: 'string', description: 'Optional, end-date of data, limited to no later than the most recent three years' },
           limit: { type: 'integer', description: 'Optional, limit the number of output data'},
-          mean_threshold: { type: 'string', description: `Optional, the minimum criteria for number of data in a grid when using "mean/monsoon" mode`},
+          mean_threshold: {
+            type: 'integer',
+            minimum: -2147483648,
+            maximum: 2147483647,
+            description: `Optional, the minimum criteria for number of data in a grid when using "mean/monsoon" mode`
+          },
           append: { type: 'string', default: 'temperature',
                     description: `Output multi-variables by comma-separated string: "temperature,salinity,density,fluorescence,transmission,oxygen,count"`}
         },
