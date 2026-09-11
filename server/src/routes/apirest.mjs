@@ -666,7 +666,22 @@ str(speed, 8, 3) as "Speed(m/s)"
     cacheout._read = ()=>{}
     var predx = ''
     const pipex = (src, res) => { //, opts = {end: false})
-      return new Promise((resolve, reject) => {
+      return new Promise(resolve => {
+        let responseStarted = false
+        let settled = false
+
+        const fail = err => {
+          if (settled) return
+          settled = true
+          fastify.log.error({ err }, 'SQL response stream failed')
+          cacheout.destroy()
+          if (!responseStarted && !res.raw.headersSent) {
+            reply.code(503).send({ error: 'Database query failed' })
+          } else {
+            res.raw.destroy()
+          }
+          resolve()
+        }
       /*src //it works
         .pipe(stringify())
         .pipe(res.raw) //, {end: false})*/
@@ -675,6 +690,7 @@ str(speed, 8, 3) as "Speed(m/s)"
         .pipe(parser())
         .pipe(new streamArray()) */
         src.on('data', chunk => {
+          responseStarted = true
           let data
           let stat = {"gap":0}
           //console.log("Debug time_period: ", chunk.time_period, typeof chunk.time_period)
@@ -783,8 +799,7 @@ str(speed, 8, 3) as "Speed(m/s)"
           cacheout.push(data)
         })
         src.on('error', (err) => {
-          fastify.log.info("------!!Stream Error: ", err)
-          reject(err)
+          fail(err)
         })
         src.on('end', () => {
           if (count>0) {
@@ -819,11 +834,13 @@ str(speed, 8, 3) as "Speed(m/s)"
           fastify.log.info("------!!Stream End with cache set!! data count: " + count)
         })
         src.on('finish', () => { //'end'
+          if (settled) return
+          settled = true
           //res.raw.write(']')
           fastify.log.info("------!!Stream finish!!-------")
           res.raw.end()  //https://stackoverflow.com/questions/70389882/nodejs-stream-returns-incomplete-response
           reply.hijack() //deprecated: res.sent = true
-          resolve
+          resolve()
         })
         //res.send(src.pipe(stringify()))
       })
