@@ -46,17 +46,14 @@ export default async function (fastify, opts) {
       const { sqldb } = fastify
       fastify.log.info({actor: 'Knex'}, 'Connected to mssql database & first query trial...')
       // frist query, just a trial...
-      sqldb.raw(
+      const data = await sqldb.raw(
           'SELECT TOP 1 longitude_degree as "longitude", latitude_degree as "latitude",' +
           'convert(nchar(19),[GMT+8],126)as "datetime", Depth as "depth", u as "u", v as "v",' +
           `direction as "direction", speed as "speed" From ${fastify.config.TABLE_SADCP}`
-      ).then(data => {
-        fastify.log.info('Test first data' + JSON.stringify(data))
-        //next()
-        return
-      })
+      )
+      fastify.log.info('Test first data' + JSON.stringify(data))
     } catch(err) {
-      fastify.log.error({actor: 'Knex'}, 'Error: Register failed.' + err)
+      fastify.log.error({ actor: 'Knex', err }, 'Startup database probe failed; continuing without probe')
       //next()
     }
   })
