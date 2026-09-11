@@ -1,4 +1,4 @@
-﻿USE [odbphy]
+USE [odbphy]
 GO
 /****** Object:  StoredProcedure [dbo].[sadcpavg]    Script Date: 2026/9/11 下午 12:40:46 ******/
 SET ANSI_NULLS ON

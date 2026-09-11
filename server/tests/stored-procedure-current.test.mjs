@@ -7,7 +7,9 @@ const currentUrl = new URL('../../database/stored-procedures/current/', import.m
 const readCurrent = (name) => readFile(new URL(name, currentUrl), 'utf8')
 
 test('versions the deployed 2026-09-11 procedure sources separately from baseline', async () => {
-  assert.deepEqual((await readdir(currentUrl)).sort(), ['ctdavg.sql', 'sadcpavg.sql'])
+  assert.deepEqual((await readdir(currentUrl)).sort(), [
+    'ctdavg.sql', 'ctdgridqry.sql', 'sadcpavg.sql', 'sadcpgridqry.sql'
+  ])
 })
 
 for (const name of ['ctdavg.sql', 'sadcpavg.sql']) {
@@ -26,11 +28,29 @@ for (const name of ['ctdavg.sql', 'sadcpavg.sql']) {
   })
 }
 
+for (const [name, table, checksNullMode] of [
+  ['ctdgridqry.sql', 'VIEW_CTD_GRID15MOA_yyyymm', true],
+  ['sadcpgridqry.sql', 'VIEW_SADCP_GRID15MOA_yyyymm', false]
+]) {
+  test(`${name} keeps the yyyymm query and applies the limit after the inner query`, async () => {
+    const sql = await readCurrent(name)
+    const activeSql = sql.replace(/\/\*[\s\S]*?\*\//g, '').replace(/--.*$/gm, '')
+
+    assert.match(activeSql, new RegExp(`FROM dbo\\.${table}`))
+    if (checksNullMode) assert.match(activeSql, /\(@mode IS NULL OR @mode <> 'raw'\)/i)
+    assert.match(activeSql, /SET @limitis = N''/i)
+    assert.match(activeSql, /SET @outerlimitis = CASE WHEN @limit <= 0/i)
+    assert.match(activeSql, /SELECT ' \+ @outerlimitis/i)
+    assert.doesNotMatch(activeSql, /SELECT TOP\(@limit\)/i)
+  })
+}
+
 test('keeps the deployed ctdavg threshold predicate and sadcpavg order fix', async () => {
   const ctd = await readCurrent('ctdavg.sql')
   const sadcp = await readCurrent('sadcpavg.sql')
 
   assert.match(ctd, /IF \(@dep_mode = 'mean' OR @depas > 0\)[\s\S]*?\+ @having;/)
+  assert.match(ctd, /AND \(@mode IS NULL OR @mode <> 'raw'\)/i)
   assert.match(sadcp, /ORDER BY longitude DESC, latitude DESC'/)
   assert.doesNotMatch(sadcp, /ORDER BY longitude DESC, latitude DESC,'/)
 })

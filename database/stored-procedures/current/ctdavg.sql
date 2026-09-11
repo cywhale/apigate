@@ -1,6 +1,6 @@
-﻿USE [odbphy]
+USE [odbphy]
 GO
-/****** Object:  StoredProcedure [dbo].[ctdavg]    Script Date: 2026/9/11 下午 12:34:56 ******/
+/****** Object:  StoredProcedure [dbo].[ctdavg]    Script Date: 2026/9/11 下午 03:13:50 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -49,7 +49,7 @@ IF (@dep1 is not NULL AND @dep1 < 0)
 
 DECLARE @depas int
 SET @depas = -1; 
-IF (((@dep0 is NULL AND @dep1 is NULL AND @dep_mode is NULL) OR ISNUMERIC(@dep_mode) = 1) AND @mode != 'raw')
+IF (((@dep0 is NULL AND @dep1 is NULL AND @dep_mode is NULL) OR ISNUMERIC(@dep_mode) = 1) AND (@mode IS NULL OR @mode <> 'raw'))
   BEGIN
   IF (ISNUMERIC(@dep_mode) = 1 AND convert(int,@dep_mode) >= 5)
     SET @depas = convert(int,@dep_mode);
