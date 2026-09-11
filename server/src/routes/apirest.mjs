@@ -329,6 +329,11 @@ str(speed, 8, 3) as "Speed(m/s)"
       { pattern: '^(?:[0-9]|1[0-8])$' }
     ]
   }
+  const dateQuerySchema = {
+    type: 'string',
+    pattern: '^(?:[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{8})$',
+    description: 'Optional date in YYYY-MM-DD or YYYYMMDD format'
+  }
 /*
   const constraint = {
     response: {
@@ -891,8 +896,8 @@ str(speed, 8, 3) as "Speed(m/s)"
                     description: 'Optional, any integer which positive: increasing or negative: descending order of output in longitude(x). Larger/smaller integer indicates priority in the ordering of x or y'},
           yorder: { type: 'integer',
                     description: 'Optional, any integer which positive: increasing or negative: descending order of output in latitude(y); see also: xorder'},
-          start: { type: 'string', description: 'Optional, start-date of data' },
-          end: { type: 'string', description: 'Optional, end-date of data, limited to no later than the most recent three years' },
+          start: { ...dateQuerySchema, description: 'Optional, start-date in YYYY-MM-DD or YYYYMMDD format' },
+          end: { ...dateQuerySchema, description: 'Optional, end-date in YYYY-MM-DD or YYYYMMDD format; limited to no later than the most recent three years' },
           limit: { type: 'integer', description: 'Optional, limit the number of output data'},
           mean_threshold: {
             type: 'integer',
@@ -1056,8 +1061,8 @@ Order by [GMT+8],longitude_degree,latitude_degree
                     description: 'Optional, any integer which positive: increasing or negative: descending order of output in longitude(x). Larger/smaller integer indicates priority in the ordering of x or y'},
           yorder: { type: 'integer',
                     description: 'Optional, any integer which positive: increasing or negative: descending order of output in latitude(y); see also: xorder'},
-          start: { type: 'string', description: 'Optional, start-date of data' },
-          end: { type: 'string', description: 'Optional, end-date of data, limited to no later than the most recent three years' },
+          start: { ...dateQuerySchema, description: 'Optional, start-date in YYYY-MM-DD or YYYYMMDD format' },
+          end: { ...dateQuerySchema, description: 'Optional, end-date in YYYY-MM-DD or YYYYMMDD format; limited to no later than the most recent three years' },
           limit: { type: 'integer', description: 'Optional, limit the number of output data'},
           mean_threshold: {
             type: 'integer',
