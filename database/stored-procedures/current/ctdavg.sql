@@ -1,6 +1,6 @@
 ﻿USE [odbphy]
 GO
-/****** Object:  StoredProcedure [dbo].[ctdavg]    Script Date: 2026/9/11 上午 10:31:37 ******/
+/****** Object:  StoredProcedure [dbo].[ctdavg]    Script Date: 2026/9/11 下午 12:34:56 ******/
 SET ANSI_NULLS ON
 GO
 SET QUOTED_IDENTIFIER ON
@@ -148,8 +148,13 @@ ELSE
 
 
 DECLARE @limitis nvarchar(100);
-SET @limitis = CASE WHEN @limit <= 0 THEN N'' else N'TOP(@limit) ' END;
+-- SET @limitis = CASE WHEN @limit <= 0 THEN N'' else N'TOP(@limit) ' END;
 /* print @limitis;*/
+-- inner query 不限制筆數，避免先取未排序資料
+SET @limitis = N'';
+
+DECLARE @outerlimitis nvarchar(100);
+SET @outerlimitis = CASE WHEN @limit <= 0 THEN N'' ELSE N'TOP(@limit) ' END;
 
 DECLARE @sqlcmd nvarchar(MAX);
 SET @sqlcmd = N'SELECT ' + @limitis + @colvars + ' FROM dbo.VIEW_CTD_GRID15MOA_2015 WHERE ' + @whereis + @periodqry;
@@ -159,7 +164,11 @@ IF (@dep_mode = 'mean')
 ELSE IF (@depas > 0)
   SET @sqlcmd = @sqlcmd + ' GROUP BY ' + 'longitude_degree, latitude_degree, time_period, CEILING([pressure] / @depas)' + @having
 
-SET @sqlcmd = 'SELECT longitude,latitude,time_period,depth,' + @append + ' from (' + @sqlcmd + ') a';
+-- SET @sqlcmd = 'SELECT longitude,latitude,time_period,depth,' + @append + ' from (' + @sqlcmd + ') a';
+SET @sqlcmd =
+    'SELECT ' + @outerlimitis +
+    'longitude,latitude,time_period,depth,' + @append +
+    ' FROM (' + @sqlcmd + ') a';
 
 print @sqlcmd;
 

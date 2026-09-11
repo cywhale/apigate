@@ -16,7 +16,10 @@ for (const name of ['ctdavg.sql', 'sadcpavg.sql']) {
     const activeSql = sql.replace(/\/\*[\s\S]*?\*\//g, "").replace(/--.*$/gm, "")
 
     assert.match(activeSql, /time_period=''0''/i)
-    assert.match(activeSql, /time_period=''0''/i)
+    assert.match(activeSql, /SET @limitis = N''/)
+    assert.match(activeSql, /SET @outerlimitis = CASE WHEN @limit <= 0/)
+    assert.match(activeSql, /@outerlimitis/)
+    assert.doesNotMatch(activeSql, /SELECT TOP(@limit)/)
     assert.match(activeSql, /IN \(''1'',''2'',''3'',''4'',''5'',''6'',''7'',''8'',''9'',''10'',''11'',''12''\)/)
     assert.doesNotMatch(activeSql, /^[^\r\n-]*SET @periodqry = .*convert\(int,@mode\)/mi)
     assert.doesNotMatch(activeSql, /^[^\r\n-]*SET @periodqry = .*time_period=0\b/mi)
