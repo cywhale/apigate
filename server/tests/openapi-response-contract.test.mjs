@@ -40,16 +40,24 @@ test('keeps dep_mode and mode as string query parameters', async (t) => {
   t.after(() => app.close())
   await app.ready()
   const specification = app.swagger()
-  for (const path of ['/api/ctd', '/api/sadcp']) {
-    const parameters = operation(specification, path).parameters
-    const byName = Object.fromEntries(parameters.map((parameter) => [parameter.name, parameter.schema]))
-    assert.equal(byName.dep_mode.type, 'string')
-    assert.deepEqual(byName.dep_mode.anyOf, [
-      { enum: ['mean', 'exact', 'range'] },
-      { pattern: '^([5-9]|[1-9][0-9]+)$' }
-    ])
-    assert.equal(byName.mode.type, 'string')
-  }
+  const ctdParameters = operation(specification, '/api/ctd').parameters
+  const ctd = Object.fromEntries(ctdParameters.map((parameter) => [parameter.name, parameter.schema]))
+  assert.equal(ctd.dep_mode.type, 'string')
+  assert.deepEqual(ctd.dep_mode.anyOf, [
+    { enum: ['mean', 'exact', 'range'] },
+    { pattern: '^([5-9]|[1-9][0-9]+)$' }
+  ])
+  assert.equal(ctd.mode.type, 'string')
+
+  const sadcpParameters = operation(specification, '/api/sadcp').parameters
+  const sadcpByName = Object.fromEntries(sadcpParameters.map((parameter) => [parameter.name, parameter]))
+  const sadcp = Object.fromEntries(sadcpParameters.map((parameter) => [parameter.name, parameter.schema]))
+  assert.deepEqual(sadcp.dep_mode, {
+    type: 'string',
+    enum: ['mean', 'exact', 'range']
+  })
+  assert.equal(sadcpByName.dep_mode.description, 'Optional, mean: depth-averaged; exact: one depth specified by dep0; range: use the dep0/dep1 interval')
+  assert.equal(sadcp.mode.type, 'string')
 })
 
 test('accepts established string values and rejects undocumented values before the handler', async (t) => {
@@ -64,4 +72,11 @@ test('accepts established string values and rejects undocumented values before t
     const response = await app.inject(`/api/ctd?lon0=120&lat0=20&${query}`)
     assert.equal(response.statusCode, 400, query)
   }
+
+  for (const query of ['dep_mode=mean', 'dep_mode=exact', 'dep_mode=range']) {
+    const response = await app.inject(`/api/sadcp?lon0=120&lat0=20&${query}`)
+    assert.notEqual(response.statusCode, 400, `SADCP ${query}`)
+  }
+  const numericSadcp = await app.inject('/api/sadcp?lon0=120&lat0=20&dep_mode=5')
+  assert.equal(numericSadcp.statusCode, 400, 'SADCP numeric dep_mode')
 })

@@ -322,6 +322,10 @@ str(speed, 8, 3) as "Speed(m/s)"
       { pattern: '^([5-9]|[1-9][0-9]+)$' }
     ]
   }
+  const sadcpDepModeSchema = {
+    type: 'string',
+    enum: ['mean', 'exact', 'range']
+  }
   const modeSchema = {
     type: 'string',
     anyOf: [
@@ -887,8 +891,8 @@ str(speed, 8, 3) as "Speed(m/s)"
                   description: 'Minimum sampling depth (optional): if only dep0 specified: output depth >= dep0; both dep0, dep1 specified: dep0 <= output depth <= dep1' },
           dep1: { type: 'number',
                   description: 'Maximum sampling depth (optional): if only dep1 specified: output depth <= dep1; see also: dep0' },
-          dep_mode: { ...depModeSchema,
-                      description: 'Optional, mean: depth-averaged; exact: one depth specified by dep0; any integer >= 5: cut-level depth'},
+          dep_mode: { ...sadcpDepModeSchema,
+                      description: 'Optional, mean: depth-averaged; exact: one depth specified by dep0; range: use the dep0/dep1 interval'},
           mode: { ...modeSchema,
                   description: 'Optional (default is long-term average), month: month climatology; monsoon: monsoon climatology; 0-18: Time_period data; see also: https://www.odb.ntu.edu.tw/adcp/adcp15moa/'},
           format: { type: 'string', enum: ['json', 'geojson', 'uvgrid'], description: 'Optional: json (default), geojson, or uvgrid which returns a gridded UV JSON (header + data[]; the data array flattens the lon–lat grid, each cell stores per-time_period values like {u, v})'},
