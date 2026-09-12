@@ -1,0 +1,109 @@
+{
+  "api": "https://api.odb.ntu.edu.tw/gebco",
+  "cases": [
+    {
+      "name": "example_1x1",
+      "sample": 5,
+      "points": 2304,
+      "bytes": 102084,
+      "seconds": 0.036,
+      "equal_lengths": true,
+      "z_min": -4961.0,
+      "z_max": 3452.0
+    },
+    {
+      "name": "example_1x1",
+      "sample": 1,
+      "points": 57600,
+      "bytes": 2509244,
+      "seconds": 0.147,
+      "equal_lengths": true,
+      "z_min": -5351.0,
+      "z_max": 3714.0
+    },
+    {
+      "name": "target_2.7x4.5",
+      "sample": 5,
+      "points": 28080,
+      "bytes": 1239775,
+      "seconds": 0.071,
+      "equal_lengths": true,
+      "z_min": -6593.0,
+      "z_max": 3672.0
+    },
+    {
+      "name": "target_2.7x4.5",
+      "sample": 2,
+      "points": 174960,
+      "bytes": 7599844,
+      "seconds": 0.311,
+      "equal_lengths": true,
+      "z_min": -6675.0,
+      "z_max": 3742.0
+    },
+    {
+      "name": "target_2.7x4.5",
+      "sample": 1,
+      "points": 699840,
+      "bytes": 30389962,
+      "seconds": 1.323,
+      "equal_lengths": true,
+      "z_min": -6684.0,
+      "z_max": 3787.0
+    }
+  ],
+  "tiled": [
+    {
+      "name": "target_tiled_2deg",
+      "sample": 1,
+      "tile_step_deg": 2.0,
+      "tiles": 6,
+      "failed": 0,
+      "total_points": 699840,
+      "total_bytes": 30390132,
+      "total_seconds": 1.427
+    },
+    {
+      "name": "target_tiled_1deg",
+      "sample": 1,
+      "tile_step_deg": 1.0,
+      "tiles": 15,
+      "failed": 0,
+      "total_points": 699840,
+      "total_bytes": 30390438,
+      "total_seconds": 1.454
+    }
+  ],
+  "point_semantics": [
+    {
+      "name": "taiwan_land",
+      "lon": 121.0,
+      "lat": 24.0,
+      "z": 1035
+    },
+    {
+      "name": "east_ocean",
+      "lon": 122.8,
+      "lat": 24.0,
+      "z": -3532
+    },
+    {
+      "name": "lanyu",
+      "lon": 121.56,
+      "lat": 22.05,
+      "z": 69
+    }
+  ],
+  "feature_collection": {
+    "points": 1152,
+    "bytes": 51056,
+    "seconds": 0.031,
+    "z_min": -3625.0,
+    "z_max": 2617.0
+  },
+  "conclusion": {
+    "response_schema": "longitude/latitude/z arrays with equal length",
+    "z_meaning": "z > 0 above sea level; z < 0 below sea level",
+    "recommended_fetch_strategy": "tile-based polygon calls (1deg or 2deg) with sample=1"
+  }
+}

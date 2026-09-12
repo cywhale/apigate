@@ -1,0 +1,41 @@
+[
+  {
+    "mode": "Annual",
+    "section_lon_degE": 121.0,
+    "section_lat0_degN": 21.0,
+    "section_lat1_degN": 22.5,
+    "section_grid_count": 7,
+    "westward_grid_count": 2,
+    "westward_transport_Sv": 0.7091584940000001,
+    "westward_u_mean_mps": -0.127409,
+    "section_mean_u_mps": 0.09458428571428572,
+    "section_mean_v_mps": 0.3119605714285715,
+    "section_mean_speed_mps": 0.3759999999999999
+  },
+  {
+    "mode": "NE Monsoon",
+    "section_lon_degE": 121.0,
+    "section_lat0_degN": 21.0,
+    "section_lat1_degN": 22.5,
+    "section_grid_count": 7,
+    "westward_grid_count": 3,
+    "westward_transport_Sv": 0.880182193,
+    "westward_u_mean_mps": -0.10542366666666668,
+    "section_mean_u_mps": 0.07720785714285715,
+    "section_mean_v_mps": 0.27068785714285715,
+    "section_mean_speed_mps": 0.3517142857142857
+  },
+  {
+    "mode": "SW Monsoon",
+    "section_lon_degE": 121.0,
+    "section_lat0_degN": 21.0,
+    "section_lat1_degN": 22.5,
+    "section_grid_count": 7,
+    "westward_grid_count": 2,
+    "westward_transport_Sv": 0.6413534820000001,
+    "westward_u_mean_mps": -0.115227,
+    "section_mean_u_mps": 0.1026752857142857,
+    "section_mean_v_mps": 0.3282854285714286,
+    "section_mean_speed_mps": 0.38557142857142856
+  }
+]

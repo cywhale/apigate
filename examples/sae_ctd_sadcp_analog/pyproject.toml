@@ -1,0 +1,15 @@
+[project]
+name = "sae-ctd-sadcp-analog"
+version = "0.1.0"
+description = "SAE analog using ODB CTD + SADCP + GEBCO"
+requires-python = ">=3.13,<3.14"
+dependencies = [
+  "basemap>=2.0.0",
+  "basemap-data-hires>=2.0.0",
+  "matplotlib>=3.10.0",
+  "numpy>=2.2.0",
+  "requests>=2.32.0",
+]
+
+[tool.uv]
+package = false
