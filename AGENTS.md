@@ -24,6 +24,7 @@ Before changing code, read `README.md`, this file, `specs/docs/production-readin
 
 - SQL Server is version `15.0.2000.5`, database `odbphy`. The procedure snapshots under `database/stored-procedures/` are review/rollback evidence, not migrations.
 - Public procedures map to `dbo.VIEW_CTD_GRID15MOA_2015`, `dbo.VIEW_CTD_GRID15MOA_yyyymm`, `dbo.VIEW_SADCP_GRID15MOA_2015`, and `dbo.VIEW_SADCP_GRID15MOA_yyyymm`; measured views are raw/source orientation tables.
+- The legacy raw `sadcpqry.sql` snapshot references `dbo.VIEW_SADCP_10M_2015`; diagnostics also inventories `dbo.VIEW_SADCP_MEASURED_2015` separately. Do not substitute one for the other.
 - Never execute stored procedure files from application startup, package install, CI, or an unreviewed agent session. DB deployment belongs to the table/procedure maintainer and must be staged or backed up first.
 - Read `database/stored-procedures/README.md` before interpreting procedure names, view/table names, `year/month` data, or `time_period`. Preserve the known distinction between `*_2015` all-span procedures and `*_yyyymm` date-range procedures.
 - Query aggregation/filtering belongs in SQL Server; public validation, response formatting, cache, HTTP stream, and backpressure belong in Fastify. Do not move millions of rows to Node merely to avoid a database plan issue.

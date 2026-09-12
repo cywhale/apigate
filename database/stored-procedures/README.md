@@ -12,9 +12,9 @@ Production SQL Server is `15.0.2000.5`, database `odbphy`.
 | CTD with `start` or `end` | `dbo.ctdgridqry` | `dbo.VIEW_CTD_GRID15MOA_yyyymm` | time-aware pre-aggregated CTD field |
 | SADCP without `start`/`end` | `dbo.sadcpavg` | `dbo.VIEW_SADCP_GRID15MOA_2015` | all-span/pre-aggregated SADCP field |
 | SADCP with `start` or `end` | `dbo.sadcpgridqry` | `dbo.VIEW_SADCP_GRID15MOA_yyyymm` | time-aware pre-aggregated SADCP field |
-| legacy raw route (not public) | `dbo.ctdqry`, `dbo.sadcpqry` | measured/raw views | retained baseline reference; unreachable from public API |
+| legacy raw route (not public) | `dbo.ctdqry`, `dbo.sadcpqry` | `dbo.VIEW_CTD_MEASURED_2015`, `dbo.VIEW_SADCP_10M_2015` | retained baseline reference; unreachable from public API |
 
-The measured views (`VIEW_CTD_MEASURED_2015` and the corresponding SADCP view) are source/orientation data, not the normal public query target. `*_yyyymm` retains year/month dimensions; `*_2015` is the all-span pre-aggregated route.
+The measured views (`VIEW_CTD_MEASURED_2015` and `VIEW_SADCP_10M_2015`) are source/orientation data for the legacy raw snapshots, not the normal public query target. The diagnostics script also inventories `VIEW_SADCP_MEASURED_2015` as a separate object; do not assume it is the raw procedure source. `*_yyyymm` retains year/month dimensions; `*_2015` is the all-span pre-aggregated route.
 
 ## API-to-procedure behavior
 

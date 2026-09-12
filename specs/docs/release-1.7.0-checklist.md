@@ -40,8 +40,10 @@
 4. merge 後確認 `main` 的 commit 仍通過完整測試，再建立 annotated tag：
 
    ```bash
+   git fetch origin
+   git switch main
+   git pull --ff-only origin main
    git tag -a v1.7.0 -m "apigate 1.7.0"
-   git push origin main
    git push origin v1.7.0
    ```
 
