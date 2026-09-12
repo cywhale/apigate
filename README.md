@@ -21,6 +21,20 @@
 [![Demo_by_CTD_API](https://github.com/cywhale/ODB/blob/master/img/ctd_api_demo_byGMT01.png)](https://github.com/cywhale/ODB/blob/master/img/ctd_api_demo_byGMT01.png)<br/>
 *Use the CTD mean data queried by the ODB CTD API to plot the sea temperature and salinity distribution in the waters around Taiwan and the sea temperature, salinity and density profiles along 22°N.*
 
+#### Current runtime and development
+
+The 1.7.0 release runs on Node `24.20.0` (`.nvmrc`) with pnpm `8.15.4`. The production API paths are `/api/ctd` and `/api/sadcp`; Swagger UI is available at `/api/`, with OpenAPI JSON/YAML at `/api/json` and `/api/yaml`. `/bio` and `/gql` are retired, and raw/cruise query paths remain disabled.
+
+Before making changes, read [AGENTS.md](AGENTS.md), the [production-readiness and performance assessment](specs/docs/production-readiness-and-performance-assessment-2026-09.md), and the [SQL Server asset guide](database/README.md). Run the application tests with:
+
+```bash
+cd server
+nvm use 24.20.0
+pnpm test
+```
+
+SQL procedure files under `database/stored-procedures/` are versioned review and rollback snapshots; they are not automatic migrations. Production SQL changes require the database/table maintainer's separate validation and rollback evidence. See [CHANGES.md](CHANGES.md) for the release summary and [the release checklist](specs/docs/release-1.7.0-checklist.md) for deployment order.
+
 #### Skill (for AI agent)
 
 You can also load [skills/odb-openapi-ocean-maps](skills/odb-openapi-ocean-maps/SKILL.md) into the `skills/` folder used by your AI agent, so the agent can call ODB SADCP/CTD/GEBCO/MHW APIs and generate oceanographic maps with Basemap or Cartopy.
