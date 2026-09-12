@@ -2,19 +2,20 @@
 
 ## Read first
 
-Before changing code, read `README.md`, this file, `specs/docs/production-readiness-and-performance-assessment-2026-09.md`, `database/README.md`, `database/stored-procedures/README.md`, and the relevant tests under `server/tests/`.
+Before changing code, read README.md, this file, specs/docs/README.md, the current dated assessment, database/README.md, database/stored-procedures/README.md, and the relevant tests under server/tests.
 
 ## Project contract
 
 - Production consumers depend on `GET /api/ctd` and `GET /api/sadcp`. Preserve their parameter names, defaults, response bytes/shapes, ordering assumptions, and error behavior unless a consumer-specific change has been discussed first.
-- OAS must remain OpenAPI `3.1.0`. Keep `servers[0].url` as the bare authority `https://ecodata.odb.ntu.edu.tw`; keep paths `/api/ctd` and `/api/sadcp`; keep registry name `odb_ctd_sadcp_v1`.
+- OAS must remain OpenAPI 3.1.0. Keep servers[0].url as the bare public authority https://ecodata.odb.ntu.edu.tw and keep paths /api/ctd and /api/sadcp; treat external consumer identity as a compatibility contract and do not change it without consumer review.
 - JSON is an array, GeoJSON is a FeatureCollection, and SADCP `uvgrid` is `{header, data}`. A schema correction must not silently change wire output.
 - Numeric `dep_mode` is CTD-only depth-bin behavior. SADCP accepts only `mean`, `exact`, and `range`. Keep raw/rawx and cruise unreachable from public requests; legacy code may remain behind an explicit disabled guard.
 - `/bio` and `/gql` are retired. Do not reintroduce them or their dependencies without a new decision.
 
 ## Runtime and deployment
 
-- Use Node `24.20.0` from `.nvmrc` (`nvm use`). `server/package.json` requires `>=24 <25`.
+- In an interactive shell, use nvm use 24.20.0 (or the version in .nvmrc) for manual commands and tests.
+- At boot, systemd does not source nvm: pm2-apigate-node24.service uses the absolute Node 24 binary and PM2_HOME. If the Node major changes, update and test the unit/install script rather than assuming an interactive nvm selection.
 - Production runs PM2 under the dedicated `pm2-apigate-node24.service`; NGINX terminates TLS and proxies localhost HTTP. Do not use production ports for local tests.
 - The current production upstream is `127.0.0.1:3025`; ports `3024` and `3023` are reserved rollback/candidate ports. Do not bind them for local tests.
 - NGINX/systemd changes require privileged operations. Prepare or review the existing scripts under `server/scripts/`; a maintainer executes sudo commands and keeps the generated backup/rollback location.
@@ -40,8 +41,15 @@ Before changing code, read `README.md`, this file, `specs/docs/production-readin
 
 - Work on a new branch for material changes. Keep code developer and code reviewer roles separate; reviewer must inspect the diff and test output before merge.
 - Prefer small slices and atomic commits. Do not mix SQL production deployment with application merge.
-- Package release 1.7.0 and annotated tag `v1.7.0` are created only after merge to `main`, final tests, production smoke tests, and rollback evidence. Package version and OAS `info.version` are separate concepts.
+- For each release, read the current version from server/package.json and create the matching annotated tag only after merge to main, final tests, production smoke tests, and rollback evidence. Do not hard-code a previous release version here.
 - Do not force-push, reset, or discard user changes. Ask before resolving an overlapping dirty worktree.
+
+## Upgrade notes
+
+- Fastify and its @fastify plugins must remain on compatible major versions; preserve the OpenAPI 3.1 identity and verify reply/stream lifecycle behavior after upgrades.
+- Knex 3 and Tedious 20 must retain MSSQL raw-query compilation and streaming behavior. Pool, timeout, encryption, and multiple-statements changes require isolated SQL staging; Node unit tests do not prove database compatibility.
+- lru-cache 11 uses the named LRUCache export. Its max option counts entries, not bytes, and the cache is process-local per PM2 worker. Do not treat it as a memory budget or shared cache.
+- The pnpm lockfile is version 6 and does not store the package version importer metadata; a package-only release version bump does not require a lockfile rewrite.
 
 ## Known risks to keep visible
 

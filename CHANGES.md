@@ -1,5 +1,12 @@
 # Changes
 
+## 1.7.1 — release candidate
+
+- Added a public-source security policy separating exact stored-procedure review from dynamic-SQL, direct-database, and DoS risk guidance.
+- Added app-level append boundary tests for injection-like values without connecting to SQL Server.
+- Clarified version-independent agent handoff rules, interactive nvm use, fixed Node 24 systemd/PM2 startup, and upgrade caveats for Fastify, Knex, Tedious, and lru-cache.
+- No production API wire behavior or stored procedure was changed in this slice.
+
 ## 1.7.0 — release candidate
 
 - Compatibility note: Node 24 is required and the deprecated `/bio` and `/gql` endpoints are unavailable; the production CTD/SADCP paths and wire shapes remain compatible.

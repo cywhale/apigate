@@ -1,6 +1,7 @@
 # Stored procedure map
 
 These files document the database side of the public CTD/SADCP API. They are versioned review snapshots only; they are not deployment migrations.
+Read the [security and publication policy](../../specs/docs/security-and-publication-policy-2026-09.md) before changing or publishing procedure snapshots.
 
 ## Database and table mapping
 
@@ -23,6 +24,14 @@ The measured views (`VIEW_CTD_MEASURED_2015` and `VIEW_SADCP_10M_2015`) are sour
 - `mean_threshold` is applied to aggregate counts in grouped mean/depth-bin branches and to row counts in non-grouped branches, according to each procedure's existing logic.
 - `mode` selects the established `time_period`/period mapping. Do not infer numeric `time_period` semantics from the API alone; compare the procedure and APIverse consumer contract.
 - Dynamic `append` projection is currently constrained by Fastify's public allow-list. A direct database caller can bypass that application guard, so procedure-side identifier validation remains a future hardening item.
+
+## Security classification
+
+- The current CTD/SADCP procedures are public review snapshots because application developers and AI reviewers need to inspect the exact SQL. They are not migrations.
+- Dynamic projection/order identifiers such as append are constrained by Fastify but remain a conditional risk for direct database callers; procedure-side allow-listing is a future hardening slice.
+- Legacy ctdqry and sadcpqry are historical raw references and must remain unreachable from public routes. Their dynamic cruise/append behavior must not be treated as safe for untrusted database input.
+- SQL injection boundary tests belong in the Node suite only at the generated-EXEC boundary. Actual procedure security and execution-plan/load tests require an isolated SQL Server staging environment.
+- DoS/resource risks are documented separately from injection: broad scans, unlimited responses, cache duplication, duplicate in-flight queries, and slow-client backpressure require API/DB performance slices.
 
 ## Snapshot policy
 
