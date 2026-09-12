@@ -8,6 +8,7 @@ import { finished } from 'stream/promises'
 //import parser from 'stream-json'
 //import streamArray from 'stream-json/streamers/StreamArray'
 //import zlib from 'zlib';
+export const jsonPeriodMode = mode => mode === 'NULL' ? '0' : mode
 
 //export const autoPrefix = process.env.NODE_ENV === 'production'? '/api' : '/apitest'
 export const autoPrefix = '/api'
@@ -35,6 +36,8 @@ str(speed, 8, 3) as "Speed(m/s)"
 //ref: https://stackoverflow.com/questions/52987837/nodejs-unable-to-import-sequelize-js-model-es6
   const limited_yrs = 3 //for CTD, SADCP, cannot reveal last 3 yrs data
   const limited_row = 100 // for raw file limitation
+  const cruiseQueryEnabled = false // retired public query mode; keep false to preserve the default SQL/cache path
+  const rawQueryEnabled = false // retain the implementation, but prevent public requests from reaching raw-data procedures
   const grd15moa = deg => { return(parseInt((deg-0.125) / 0.25) * 0.25 + 0.25) } //gridded to 0.25-degree = 15 minute of arc
 
   const grdMissingVal = (res, xmin, grdx, grdy, curx, cury, gcnt, gi, gj, ix, iy, nx, tp) => {
@@ -257,6 +260,84 @@ str(speed, 8, 3) as "Speed(m/s)"
         .prop('oxygen', S.number())
         .prop('count', S.integer())
        )
+  const jsonArraySchema = (title, rowSchema) => ({
+    title,
+    type: 'array',
+    items: rowSchema.valueOf()
+  })
+  const featureCollectionSchema = (title, featureSchema) => ({
+    title,
+    type: 'object',
+    required: ['type', 'features'],
+    properties: {
+      type: { const: 'FeatureCollection' },
+      features: { type: 'array', items: featureSchema.valueOf() }
+    }
+  })
+  const sadcpUvGridSchema = {
+    title: 'SadcpUvGrid',
+    type: 'object',
+    required: ['header', 'data'],
+    properties: {
+      header: {
+        type: 'object',
+        required: ['periodMode', 'periodArray', 'parameterCategory', 'parameterNumber',
+          'parameterNumberName', 'parameterUnit', 'refTime', 'forcastTime', 'lo1', 'la1',
+          'lo2', 'la2', 'nx', 'ny', 'dx', 'dy'],
+        properties: {
+          periodMode: { type: ['string', 'integer'] },
+          periodArray: { type: 'array', items: { type: 'integer' } },
+          parameterCategory: { type: 'integer' },
+          parameterNumber: { type: 'integer' },
+          parameterNumberName: { type: 'string' },
+          parameterUnit: { type: 'string' },
+          refTime: { type: ['string', 'null'] },
+          forcastTime: { type: 'integer' },
+          lo1: { type: 'number' }, la1: { type: 'number' },
+          lo2: { type: 'number' }, la2: { type: 'number' },
+          nx: { type: 'integer' }, ny: { type: 'integer' },
+          dx: { type: 'number' }, dy: { type: 'number' }
+        }
+      },
+      data: {
+        type: 'array',
+        items: {
+          type: 'object',
+          additionalProperties: {
+            type: 'object',
+            required: ['u', 'v'],
+            properties: {
+              u: { type: ['number', 'null'] },
+              v: { type: ['number', 'null'] }
+            }
+          }
+        }
+      }
+    }
+  }
+  const depModeSchema = {
+    type: 'string',
+    anyOf: [
+      { enum: ['mean', 'exact', 'range'] },
+      { pattern: '^([5-9]|[1-9][0-9]+)$' }
+    ]
+  }
+  const sadcpDepModeSchema = {
+    type: 'string',
+    enum: ['mean', 'exact', 'range']
+  }
+  const modeSchema = {
+    type: 'string',
+    anyOf: [
+      { enum: ['month', 'season', 'monsoon'] },
+      { pattern: '^(?:[0-9]|1[0-8])$' }
+    ]
+  }
+  const dateQuerySchema = {
+    type: 'string',
+    pattern: '^(?:[0-9]{4}-[0-9]{2}-[0-9]{2}|[0-9]{8})$',
+    description: 'Optional date in YYYY-MM-DD or YYYYMMDD format'
+  }
 /*
   const constraint = {
     response: {
@@ -275,7 +356,7 @@ str(speed, 8, 3) as "Speed(m/s)"
 */
   const queryPipe = async (req, reply, keyx='sadcp') => {
       const qstr = req.query
-      const test_raw = (typeof qstr.mode !== 'undefined') && (/^raw/.test(qstr.mode))
+      const test_raw = rawQueryEnabled && (typeof qstr.mode !== 'undefined') && (/^raw/.test(qstr.mode))
       let start='1991-01-01'
       let end = 'NULL' //'' before modifed query to stored procedure in mssql 20220505
       let startd = Date.parse(start)
@@ -375,8 +456,8 @@ str(speed, 8, 3) as "Speed(m/s)"
       }
 
       let cruise = ''
-      if (keyx === 'ctd') { //202305 add query cruise mode for CTD
-        if (typeof qstr.cruise !== 'undefined' && qstr.cruise.trim()) {
+      if (keyx === 'ctd') { // keep the established CTD cache-key namespace
+        if (cruiseQueryEnabled && typeof qstr.cruise !== 'undefined' && qstr.cruise.trim()) {
           cruise = qstr.cruise.trim()
           //fastify.log.info("In cruise query mode: " + cruise)
           allspan_avg_flag = 0 //in ctdavg, ctdgridqry procedure, no cruise column in those tables.
@@ -403,7 +484,7 @@ str(speed, 8, 3) as "Speed(m/s)"
           period = [13,14,15,16]
         } else if (mode === 'month') {
           period = [1,2,3,4,5,6,7,8,9,10,11,12]
-        } else if (/^raw/.test(mode)) {
+        } else if (rawQueryEnabled && /^raw/.test(mode)) {
           if (auth === 'guest' || !cruise || mode !== 'rawx') { limit = limited_row } //202305 add query cruise mode for CTD
         } else {
           if (Number.isInteger(Number(qstr.mode))) {
@@ -489,7 +570,12 @@ str(speed, 8, 3) as "Speed(m/s)"
         mode = `"${mode}"`
       }
 
-      let mean_threshold = qstr.mean_threshold??-1
+      // AJV coerces a valid query-string integer to number. Keep a numeric
+      // fallback here as defense in depth: this value is interpolated into the
+      // stored-procedure EXEC statement below and must never remain a string.
+      const mean_threshold = Number.isInteger(qstr.mean_threshold)
+        ? qstr.mean_threshold
+        : -1
       let lon0 = qstr.lon0 //??105 //now it's required
       let lon1 = qstr.lon1??grd15moa(lon0)
       let lat0 = qstr.lat0 //??2   //now it's required
@@ -516,7 +602,7 @@ str(speed, 8, 3) as "Speed(m/s)"
                    `@mode=${mode}, @xorder=${xorder}, @yorder=${yorder}, @start=${start}, @end=${end}, @limit=${limit}, @mean_threshold=${mean_threshold}, @append=${append}`
       }
       //202305 add query cruise mode for CTD
-      if (cruise) {
+      if (cruiseQueryEnabled && cruise) {
         cruise = `"${cruise}"`
         qry = qry + `, @cruise=${cruise};`
       } else {
@@ -589,7 +675,22 @@ str(speed, 8, 3) as "Speed(m/s)"
     cacheout._read = ()=>{}
     var predx = ''
     const pipex = (src, res) => { //, opts = {end: false})
-      return new Promise((resolve, reject) => {
+      return new Promise(resolve => {
+        let responseStarted = false
+        let settled = false
+
+        const fail = err => {
+          if (settled) return
+          settled = true
+          fastify.log.error({ err }, 'SQL response stream failed')
+          cacheout.destroy()
+          if (!responseStarted && !res.raw.headersSent) {
+            reply.code(503).send({ error: 'Database query failed' })
+          } else {
+            res.raw.destroy()
+          }
+          resolve()
+        }
       /*src //it works
         .pipe(stringify())
         .pipe(res.raw) //, {end: false})*/
@@ -598,6 +699,7 @@ str(speed, 8, 3) as "Speed(m/s)"
         .pipe(parser())
         .pipe(new streamArray()) */
         src.on('data', chunk => {
+          responseStarted = true
           let data
           let stat = {"gap":0}
           //console.log("Debug time_period: ", chunk.time_period, typeof chunk.time_period)
@@ -640,7 +742,7 @@ str(speed, 8, 3) as "Speed(m/s)"
               cacheout.push(predx)
               data = JSON.stringify(toGeoJsonRow(chunk))
             } else if (keyx === 'sadcp' && format === 'uvgrid') { //JSON format for GFS: https://github.com/cambecc/grib2json/blob/master/README.md
-              predx = `{"header":{"periodMode":${mode},"periodArray":${JSON.stringify(period)},"parameterCategory":11,"parameterNumber":1,"parameterNumberName":"UV-grids","parameterUnit":"m.s-1","refTime":null,"forcastTime":0,"lo1":${bbox[0]},"la1":${bbox[3]},"lo2":${bbox[2]},"la2":${bbox[1]},"nx":${nx},"ny":${ny},"dx":${dx},"dy":${dy}},"data":[`
+              predx = `{"header":{"periodMode":${jsonPeriodMode(mode)},"periodArray":${JSON.stringify(period)},"parameterCategory":11,"parameterNumber":1,"parameterNumberName":"UV-grids","parameterUnit":"m.s-1","refTime":null,"forcastTime":0,"lo1":${bbox[0]},"la1":${bbox[3]},"lo2":${bbox[2]},"la2":${bbox[1]},"nx":${nx},"ny":${ny},"dx":${dx},"dy":${dy}},"data":[`
               res.raw.write(predx)
               cacheout.push(predx)
               //if (chkmissFlag) { //count == 0 always check
@@ -706,8 +808,7 @@ str(speed, 8, 3) as "Speed(m/s)"
           cacheout.push(data)
         })
         src.on('error', (err) => {
-          fastify.log.info("------!!Stream Error: ", err)
-          reject(err)
+          fail(err)
         })
         src.on('end', () => {
           if (count>0) {
@@ -742,11 +843,13 @@ str(speed, 8, 3) as "Speed(m/s)"
           fastify.log.info("------!!Stream End with cache set!! data count: " + count)
         })
         src.on('finish', () => { //'end'
+          if (settled) return
+          settled = true
           //res.raw.write(']')
           fastify.log.info("------!!Stream finish!!-------")
           res.raw.end()  //https://stackoverflow.com/questions/70389882/nodejs-stream-returns-incomplete-response
           reply.hijack() //deprecated: res.sent = true
-          resolve
+          resolve()
         })
         //res.send(src.pipe(stringify()))
       })
@@ -788,19 +891,24 @@ str(speed, 8, 3) as "Speed(m/s)"
                   description: 'Minimum sampling depth (optional): if only dep0 specified: output depth >= dep0; both dep0, dep1 specified: dep0 <= output depth <= dep1' },
           dep1: { type: 'number',
                   description: 'Maximum sampling depth (optional): if only dep1 specified: output depth <= dep1; see also: dep0' },
-          dep_mode: { type: 'string',
-                      description: 'Optional, mean: depth-averaged; exact: one depth specified by dep0; any integer >= 5: cut-level depth'},
-          mode: { type: 'string',
+          dep_mode: { ...sadcpDepModeSchema,
+                      description: 'Optional, mean: depth-averaged; exact: one depth specified by dep0; range: use the dep0/dep1 interval'},
+          mode: { ...modeSchema,
                   description: 'Optional (default is long-term average), month: month climatology; monsoon: monsoon climatology; 0-18: Time_period data; see also: https://www.odb.ntu.edu.tw/adcp/adcp15moa/'},
-          format: { type: 'string', description: 'Optional: json (default), geojson, or uvgrid which returns a gridded UV JSON (header + data[]; the data array flattens the lon–lat grid, each cell stores per-time_period values like {u, v})'},
+          format: { type: 'string', enum: ['json', 'geojson', 'uvgrid'], description: 'Optional: json (default), geojson, or uvgrid which returns a gridded UV JSON (header + data[]; the data array flattens the lon–lat grid, each cell stores per-time_period values like {u, v})'},
           xorder: { type: 'integer',
                     description: 'Optional, any integer which positive: increasing or negative: descending order of output in longitude(x). Larger/smaller integer indicates priority in the ordering of x or y'},
           yorder: { type: 'integer',
                     description: 'Optional, any integer which positive: increasing or negative: descending order of output in latitude(y); see also: xorder'},
-          start: { type: 'string', description: 'Optional, start-date of data' },
-          end: { type: 'string', description: 'Optional, end-date of data, limited to no later than the most recent three years' },
+          start: { ...dateQuerySchema, description: 'Optional, start-date in YYYY-MM-DD or YYYYMMDD format' },
+          end: { ...dateQuerySchema, description: 'Optional, end-date in YYYY-MM-DD or YYYYMMDD format; limited to no later than the most recent three years' },
           limit: { type: 'integer', description: 'Optional, limit the number of output data'},
-          mean_threshold: { type: 'string', description: `Optional, the minimum criteria for number of data in a grid when using mean mode`},
+          mean_threshold: {
+            type: 'integer',
+            minimum: -2147483648,
+            maximum: 2147483647,
+            description: `Optional, the minimum criteria for number of data in a grid when using mean mode`
+          },
           append: { type: 'string', default: 'u,v',
                     description: `Output multi-variables by comma-separated string: "u,v,speed,direction,count"`}
         },
@@ -820,7 +928,14 @@ str(speed, 8, 3) as "Speed(m/s)"
           //properties: { //https://bit.ly/3vVD0Zg : fast-json-stringify doesn't support oneOf as the root object
           //  response: sadcpSchema
           //}
-          S.oneOf([sadcpJsonSchema, sadcpGJsonSchema])
+          {
+            description: 'Shape corresponds to the format query parameter.',
+            oneOf: [
+              jsonArraySchema('SadcpJsonArray', sadcpJsonSchema),
+              featureCollectionSchema('SadcpGeoJson', sadcpGJsonSchema),
+              sadcpUvGridSchema
+            ]
+          }
         //) //}
       }
     },
@@ -931,6 +1046,7 @@ Order by [GMT+8],longitude_degree,latitude_degree
       tags: ['CTD'],
       querystring: {
         type: "object",
+        additionalProperties: false,
         properties: {
           lon0: { type: 'number', description: 'Start longitude' },
           lon1: { type: 'number', description: 'Optional, end longitude' },
@@ -940,20 +1056,24 @@ Order by [GMT+8],longitude_degree,latitude_degree
                   description: 'Minimum sampling depth (optional): if only dep0 specified: output depth >= dep0; both dep0, dep1 specified: dep0 <= output depth <= dep1' },
           dep1: { type: 'number',
                   description: 'Maximum sampling depth (optional): if only dep1 specified: output depth <= dep1; see also: dep0' },
-          dep_mode: { type: 'string',
+          dep_mode: { ...depModeSchema,
                       description: 'Optional, mean: depth-averaged; exact: one depth specified by dep0; any integer >= 5: cut-level depth'},
-          mode: { type: 'string',
+          mode: { ...modeSchema,
                   description: 'Optional (default is long-term average), month: month climatology; monsoon: monsoon climatology; 0-18: Time_period data; see also: https://www.odb.ntu.edu.tw/ctd/ctd15moa/'},
-          cruise: { type: 'string', description: 'Deprecated, only internally used.'},
-          format: { type: 'string', description: 'Optional (default: json), or geojson'},
+          format: { type: 'string', enum: ['json', 'geojson'], description: 'Optional (default: json), or geojson'},
           xorder: { type: 'integer',
                     description: 'Optional, any integer which positive: increasing or negative: descending order of output in longitude(x). Larger/smaller integer indicates priority in the ordering of x or y'},
           yorder: { type: 'integer',
                     description: 'Optional, any integer which positive: increasing or negative: descending order of output in latitude(y); see also: xorder'},
-          start: { type: 'string', description: 'Optional, start-date of data' },
-          end: { type: 'string', description: 'Optional, end-date of data, limited to no later than the most recent three years' },
+          start: { ...dateQuerySchema, description: 'Optional, start-date in YYYY-MM-DD or YYYYMMDD format' },
+          end: { ...dateQuerySchema, description: 'Optional, end-date in YYYY-MM-DD or YYYYMMDD format; limited to no later than the most recent three years' },
           limit: { type: 'integer', description: 'Optional, limit the number of output data'},
-          mean_threshold: { type: 'string', description: `Optional, the minimum criteria for number of data in a grid when using "mean/monsoon" mode`},
+          mean_threshold: {
+            type: 'integer',
+            minimum: -2147483648,
+            maximum: 2147483647,
+            description: `Optional, the minimum criteria for number of data in a grid when using "mean/monsoon" mode`
+          },
           append: { type: 'string', default: 'temperature',
                     description: `Output multi-variables by comma-separated string: "temperature,salinity,density,fluorescence,transmission,oxygen,count"`}
         },
@@ -961,7 +1081,13 @@ Order by [GMT+8],longitude_degree,latitude_degree
       },
       response: {
         200:
-          S.oneOf([ctdJsonSchema, ctdGJsonSchema])
+          {
+            description: 'Shape corresponds to the format query parameter.',
+            oneOf: [
+              jsonArraySchema('CtdJsonArray', ctdJsonSchema),
+              featureCollectionSchema('CtdGeoJson', ctdGJsonSchema)
+            ]
+          }
       }
     },
     handler: async (req, reply) => {

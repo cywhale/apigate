@@ -7,7 +7,8 @@ const apiConf = {
 //fastify.register(Swagger,  {
     //exposeRoute: true, //removed after swagger-ui indep of fastify/swagger
     hideUntagged: true,
-    swagger: {
+    openapi: {
+      openapi: '3.1.0',
       info: {
         title: 'ODB Open API',
         description: '## CTD/SADCP API Manual\n' +
@@ -22,10 +23,9 @@ const apiConf = {
       //  url: 'https://swagger.io',
       //  description: 'Find more info here'
       //},
-      host: 'ecodata.odb.ntu.edu.tw',
-      schemes: ['https'],
-      consumes: ['application/json'],
-      produces: ['application/json'],
+      servers: [
+        { url: 'https://ecodata.odb.ntu.edu.tw' }
+      ],
     },
 //} //https://github.com/fastify/fastify-swagger/issues/191
 }

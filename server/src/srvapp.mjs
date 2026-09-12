@@ -1,30 +1,22 @@
 import AutoLoad from '@fastify/autoload'
 import Cors from '@fastify/cors'
 import { join } from 'desm'
-import mercurius from 'mercurius'
-import schema from './graphql/schema.mjs'
-import resolvers from './graphql/resolvers.mjs'
-import fs from 'fs'
+import fs from 'node:fs'
 import { Readable } from 'node:stream'
 
 export default async function (fastify, opts) {
+  const {
+    enableDatabase = true,
+    enableStartupCacheProbe = true
+  } = opts
+
   fastify.decorate('conf', {
     node_env: process.env.NODE_ENV || 'development',
     port: 3023 //process.env.PORT || 3000,
   })
 
-//fastify.register(db, { url: fastify.config.MONGO_CONNECT }) //use mongoose
-  fastify.register(mercurius, {
-        schema: schema,
-        resolvers: resolvers,
-        graphiql: true,
-        jit: 1,
-        //federationMetadata: true,
-        path: '/gql'
-        //queryDepth: 11
-  })
 
-  fastify.register(import('./config/knexconn.js'), {
+  if (enableDatabase) fastify.register(import('./config/knexconn.js'), {
     knexName: 'sqldb',
     knexOptions: {
       client: 'mssql',
@@ -54,17 +46,14 @@ export default async function (fastify, opts) {
       const { sqldb } = fastify
       fastify.log.info({actor: 'Knex'}, 'Connected to mssql database & first query trial...')
       // frist query, just a trial...
-      sqldb.raw(
+      const data = await sqldb.raw(
           'SELECT TOP 1 longitude_degree as "longitude", latitude_degree as "latitude",' +
           'convert(nchar(19),[GMT+8],126)as "datetime", Depth as "depth", u as "u", v as "v",' +
           `direction as "direction", speed as "speed" From ${fastify.config.TABLE_SADCP}`
-      ).then(data => {
-        fastify.log.info('Test first data' + JSON.stringify(data))
-        //next()
-        return
-      })
+      )
+      fastify.log.info('Test first data' + JSON.stringify(data))
     } catch(err) {
-      fastify.log.error({actor: 'Knex'}, 'Error: Register failed.' + err)
+      fastify.log.error({ actor: 'Knex', err }, 'Startup database probe failed; continuing without probe')
       //next()
     }
   })
@@ -74,6 +63,7 @@ export default async function (fastify, opts) {
     max: 40000,
     ttl: 1000 * 60 * 60 * 72
   }).ready(async () => {
+    if (!enableStartupCacheProbe) return
     try {
       const { streamCache } = fastify
       fastify.log.info({actor: 'streamBufferCache'}, 'Test key...')
@@ -174,7 +164,7 @@ export default async function (fastify, opts) {
     return (req, callback) => {
       const corsOptions = {
         origin: true,
-        credentials: true,
+        credentials: false,
         preflight: true,
         preflightContinue: true,
         methods: ['GET', 'POST', 'OPTIONS'],
@@ -189,11 +179,6 @@ export default async function (fastify, opts) {
       }
       callback(null, corsOptions)
     }
-  })
-
-  fastify.register(AutoLoad, {
-    dir: join(import.meta.url, 'plugins'),
-    options: Object.assign({}, opts)
   })
 
   fastify.register(AutoLoad, {
