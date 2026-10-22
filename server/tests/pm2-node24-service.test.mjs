@@ -4,12 +4,17 @@ import test from 'node:test'
 
 const unit = readFileSync(new URL('../ops/pm2-apigate-node24.service', import.meta.url), 'utf8')
 const installer = readFileSync(new URL('../scripts/install-apigate-node24-service.sh', import.meta.url), 'utf8')
+const pinned = readFileSync(new URL('../../.nvmrc', import.meta.url), 'utf8').trim()
 
 test('isolates apigate in a dedicated Node 24 PM2 systemd service', () => {
   assert.match(unit, /^User=odbadmin$/m)
   assert.match(unit, /^Environment=PM2_HOME=\/home\/odbadmin\/\.pm2-apigate-node24$/m)
   assert.match(unit, /^PIDFile=\/home\/odbadmin\/\.pm2-apigate-node24\/pm2\.pid$/m)
-  assert.match(unit, /^ExecStart=\/home\/odbadmin\/\.nvm\/versions\/v24\.20\.0\/bin\/node \/home\/odbadmin\/\.local\/npm\/lib\/node_modules\/pm2\/bin\/pm2 resurrect$/m)
+  const node = `/home/odbadmin/.nvm/versions/v${pinned}/bin/node`
+  for (const [directive, command] of [['ExecStart', 'resurrect'], ['ExecReload', 'reload all'], ['ExecStop', 'kill']]) {
+    assert.ok(unit.split('\n').includes(`${directive}=${node} /home/odbadmin/.local/npm/lib/node_modules/pm2/bin/pm2 ${command}`))
+  }
+  assert.ok(unit.includes(`Environment=PATH=${node.slice(0, -5)}:`))
   assert.doesNotMatch(unit, /pm2-odbadmin|\.pm2\/pm2\.pid/)
 })
 

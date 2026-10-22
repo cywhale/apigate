@@ -23,17 +23,19 @@
 
 #### Current runtime and development
 
-The 1.7.0 release runs on Node `24.20.0` (`.nvmrc`) with pnpm `8.15.4`. The production API paths are `/api/ctd` and `/api/sadcp`; Swagger UI is available at `/api/`, with OpenAPI JSON/YAML at `/api/json` and `/api/yaml`. `/bio` and `/gql` are retired, and raw/cruise query paths remain disabled.
+Use the exact Node 24 version in `.nvmrc` with pnpm `8.15.4`. The production API paths are `/api/ctd` and `/api/sadcp`; Swagger UI is available at `/api/`, with OpenAPI JSON/YAML at `/api/json` and `/api/yaml`. `/bio` and `/gql` are retired, and raw/cruise query paths remain disabled.
 
 Before making changes, read [AGENTS.md](AGENTS.md), the [production-readiness and performance assessment](specs/docs/production-readiness-and-performance-assessment-2026-09.md), and the [SQL Server asset guide](database/README.md). Run the application tests with:
 
 ```bash
+nvm use
 cd server
-nvm use 24.20.0
 pnpm test
 ```
 
 SQL procedure files under `database/stored-procedures/` are versioned review and rollback snapshots; they are not automatic migrations. Production SQL changes require the database/table maintainer's separate validation and rollback evidence. See [CHANGES.md](CHANGES.md) for the release summary and [the release checklist](specs/docs/release-1.7.0-checklist.md) for deployment order.
+
+For ongoing Node/PM2 upgrades and staging isolation, follow [runtime maintenance](specs/docs/runtime-maintenance.md). Production stays on loopback port 3025; historical migration scripts are not recurring deployment commands.
 
 #### Skill (for AI agent)
 

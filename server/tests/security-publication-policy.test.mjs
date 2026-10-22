@@ -16,7 +16,7 @@ test('keeps security/publication guidance and runtime handoff rules explicit', a
   ])
 
   assert.doesNotMatch(agents, /odb_ctd_sadcp_v1/)
-  assert.match(agents, /interactive shell, use nvm use 24\.20\.0/)
+  assert.match(agents, /interactive shell, use `nvm use`.*\.nvmrc/)
   assert.match(agents, /systemd does not source nvm/)
   assert.match(agents, /absolute Node 24 binary and PM2_HOME/)
   assert.match(agents, /Knex 3 and Tedious 20/)

@@ -14,10 +14,12 @@ Before changing code, read README.md, this file, specs/docs/README.md, the curre
 
 ## Runtime and deployment
 
-- In an interactive shell, use nvm use 24.20.0 (or the version in .nvmrc) for manual commands and tests.
-- At boot, systemd does not source nvm: pm2-apigate-node24.service uses the absolute Node 24 binary and PM2_HOME. If the Node major changes, update and test the unit/install script rather than assuming an interactive nvm selection.
+- In an interactive shell, use `nvm use` from the repository root to select the exact version in `.nvmrc` for manual commands and tests.
+- At boot, systemd does not source nvm: pm2-apigate-node24.service uses the absolute Node 24 binary and PM2_HOME. For every Node version change, including minor/patch updates, update and verify the unit, daemon, workers and saved PM2 interpreters rather than assuming an interactive nvm selection.
 - Production runs PM2 under the dedicated `pm2-apigate-node24.service`; NGINX terminates TLS and proxies localhost HTTP. Do not use production ports for local tests.
 - The current production upstream is `127.0.0.1:3025`; ports `3024` and `3023` are reserved rollback/candidate ports. Do not bind them for local tests.
+- Production uses `server/ops/ecosystem.config.cjs` and `/home/odbadmin/proj/apigate/server`. Develop and stage in an isolated worktree with separate dependencies and an unused loopback port. A second process using the same checkout is not an independent code rollback.
+- Read `specs/docs/runtime-maintenance.md` before runtime deployment. The original install/NGINX migration scripts are historical cutover tools, not recurring upgrade commands. Retire old apigate instances only after verification; the default PM2 service also manages unrelated projects.
 - NGINX/systemd changes require privileged operations. Prepare or review the existing scripts under `server/scripts/`; a maintainer executes sudo commands and keeps the generated backup/rollback location.
 - Never commit credentials, `.env`, certificates, private keys, or test secrets.
 
@@ -33,7 +35,7 @@ Before changing code, read README.md, this file, specs/docs/README.md, the curre
 ## Testing requirements
 
 - Every implementation slice must add or update a focused test under `server/tests/`. Tests must cover compatibility and failure cases, not just source-text presence.
-- Before handoff, run `cd server && nvm use 24.20.0 && pnpm test`, then report the exact result.
+- Before handoff, select the runtime using `nvm use` at the repository root, then run `cd server && pnpm test` and report the exact result.
 - SQL tests that inspect files do not prove SQL Server execution. For procedure changes retain the SQL Server diagnostic/result/actual-plan evidence separately and document the database version/compatibility level.
 - For stream, cache, or response changes include large-result, SQL-error, client-abort/slow-client, and cache hit/miss considerations where relevant.
 
