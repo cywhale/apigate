@@ -10,9 +10,10 @@ function knexPlugin (fastify, opts, next) {
     fastify.decorate(knexName, kconn)
   }
 
-  fastify.addHook('onClose', (instance, done) => {
+  fastify.addHook('onClose', async instance => {
     const sqldb = instance[knexName]
-    sqldb.destroy(() => instance.log.info({actor: 'Knex'}, 'Exit and pool closed.'))
+    await sqldb.destroy()
+    instance.log.info({actor: 'Knex'}, 'Exit and pool closed.')
   })
 
   next()

@@ -1,5 +1,12 @@
 # Changes
 
+## 1.7.2 — release candidate
+
+- Pin Node 24.22.1 for the October 2026 security release; preserve application dependencies and API behavior.
+- Centralize the production PM2 configuration and add a checked runtime upgrade/rollback workflow on the stable upstream port.
+- Isolate staging from the production checkout and document retirement of legacy instances.
+- Complete Fastify shutdown by awaiting Knex pool destruction, including close-error propagation.
+
 ## 1.7.1 — release candidate
 
 - Added a public-source security policy separating exact stored-procedure review from dynamic-SQL, direct-database, and DoS risk guidance.

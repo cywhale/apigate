@@ -12,6 +12,8 @@ This directory contains durable project guidance and dated review records.
 
 ## Document status
 
+For current Node/PM2 maintenance, staging isolation and rollback, use [runtime maintenance](runtime-maintenance.md).
+
 - Dated assessment and security policy files are review records. They do not authorize SQL Server or production changes.
 - SQL procedure files remain the inspectable source snapshots. Security policy is separated from source so an agent can review both the exact SQL and its threat model in one repository.
 - A future release may add a newer dated assessment. Do not assume a version number, port, or deployment snapshot in a dated document remains current.
